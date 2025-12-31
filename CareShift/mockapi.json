@@ -1,0 +1,14 @@
+{
+  "Employees": {
+    "1": {
+      "id": "",
+      "name": "",
+      "role": "",
+      "permission": "",
+      "availability": ["", "", ""]
+    }
+  },
+  "Holidays": {
+    "Employee-id": []
+  }
+}
