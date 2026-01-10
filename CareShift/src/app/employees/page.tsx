@@ -2,16 +2,14 @@ import getData from "@/functions/fetchData";
 import { EmployeesResponse } from "@/types/employee";
 
 export default async function EmployeePage() {
-  const token = process.env.MOCKFAST_API_TOKEN;
-
-  const data = await getData<EmployeesResponse>(
+  const employeeData = await getData<EmployeesResponse>(
     "https://mockfast.io/backend/apitemplate/get/888213805131320/employee",
     {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {},
     }
   );
 
-  console.log(data);
+  console.log(employeeData);
 
   return (
     <main>

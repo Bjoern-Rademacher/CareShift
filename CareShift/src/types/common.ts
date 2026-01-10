@@ -1,3 +1,7 @@
+export type ISODateString = string & { __brand: "ISODate" };
+
+export type UUID = string;
+
 export type AccessPermission =
   | "ADMIN"
   | "USER"
@@ -15,3 +19,7 @@ export type EmployeePosition =
   | "NURSE"
   | "INTERN"
   | "MEDICAL_ASSISTANT";
+
+export type Weekday = "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN";
+
+export type LocalTimeString = `${number}${number}:${number}${number}`;
