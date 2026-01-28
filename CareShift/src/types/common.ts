@@ -7,10 +7,15 @@ export type AccessPermission =
   | "USER"
   | "DISPLAY_STAFF"
   | "DISPLAY_PUBLIC";
-//defining permission levels
 
 export type Departments = "ER" | "ICU" | "SURGERY" | "RADIOLOGY";
-//defining possible departments
+
+export const DEPARTMENTS: readonly Departments[] = [
+  "ER",
+  "ICU",
+  "SURGERY",
+  "RADIOLOGY",
+];
 
 export type EmployeePosition =
   | "DOCTOR"

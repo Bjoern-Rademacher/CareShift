@@ -6,6 +6,7 @@ import {
   ISODateString,
   LocalTimeString,
 } from "@/types/common";
+
 export interface TemplateRule {
   id: UUID;
   department: Departments;
@@ -33,4 +34,8 @@ export interface SchedulePeriod {
   startDate: ISODateString;
   endDate: ISODateString;
   status: "draft" | "published" | "needsRepublish";
+}
+
+export interface PeriodsResponse {
+  periods: SchedulePeriod[];
 }

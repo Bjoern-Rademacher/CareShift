@@ -3,10 +3,7 @@ import { EmployeesResponse } from "@/types/employee";
 
 export default async function EmployeePage() {
   const employeeData = await getData<EmployeesResponse>(
-    "https://mockfast.io/backend/apitemplate/get/888213805131320/employee",
-    {
-      headers: {},
-    }
+    "https://mockfast.io/backend/apitemplate/get/888213805131320/employee"
   );
 
   console.log(employeeData);
