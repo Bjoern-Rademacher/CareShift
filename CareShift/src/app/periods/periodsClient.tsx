@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 
 import type { SchedulePeriod } from "@/types/scheduling";
 import type { Departments } from "@/types/common";
@@ -96,7 +97,18 @@ export default function PeriodsClient({ periods }: Props) {
         {filteredPeriods.length === 0 ? (
           <li>No data for this week</li>
         ) : (
-          filteredPeriods.map((p) => <li key={p.id}>{p.startDate}</li>)
+          filteredPeriods.map((p) => (
+            <li key={p.id}>
+              <span>{p.startDate}</span>
+              <br />
+              <Link
+                className="bg-white underline text-blue-600 hover:text-blue-800"
+                href={`/periods/${p.id}`}
+              >
+                Show details
+              </Link>
+            </li>
+          ))
         )}
       </ul>
     </section>
