@@ -28,6 +28,20 @@ export interface ShiftSlot {
   endTime: ISODateString;
 }
 
+export type ShiftSlotDto = {
+  id: UUID;
+  periodId: UUID;
+  employeeId: UUID | null;
+  department: Departments;
+  position: EmployeePosition;
+  startTime: ISODateString;
+  endTime: ISODateString;
+};
+
+export type ShiftSlotsResponseDto = {
+  shiftSlots: ShiftSlotDto[];
+};
+
 export interface SchedulePeriod {
   id: UUID;
   department: Departments;

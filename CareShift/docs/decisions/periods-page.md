@@ -30,9 +30,62 @@
 • User can open a period detail (/periods/:id) by clicking “show details” next to a period.
 
 => Decision
-• Detail Page shows Period ID, Department, StartDate
-• On /periods/[id], we fetch all periods and select the one matching the route id because the mock API does not expose /periods/:id and adding endpoints is out of scope for the MVP.
-• If the period is not found, a simple “404 – Period not found” screen with a “Back to overview” button s shown
+• Detail Page renders Period ID, Department, StartDate
+• period data is resolved by fetching all periods, then selecting by route [id] because mock api does not expose /periods/:id
+• Missing periods are handled by a scoped 404 page with recovery path
 
 => Domain Context
-• This pages final state is intended to show period details including slots and full editing functionality.
+• A Period is a weekly container (Mon–Sun) for one department.
+• Periods are the parent entity for shift slots and future scheduling actions.
+
+=> Session Boundaries (!ToDo)
+• No auto-redirects, no timers, no error telemetry.
+• No slot rendering
+
+################################################
+
+29 jan 2026
+
+=> Intent
+• Admin can view shift slots for a selected period (read-only)
+
+=> Decision
+• On /periods/:id, slots are fetched from the mock API and adapted via a small adapter function to keep UI data flow independent from the API response shape.
+• Slots are rendered as a simple table (read-only)
+
+=> Domain Context
+• Shift slots are a time block within a period
+• A shift slot can be assigned to a employee or remain unassigned
+• Each slot belongs to exactly one period and may cross midnight.
+
+=> Session Boundaries
+
+• Creating new slots
+• Editing existing slots
+• Assigning employees to slots
+
+################################################
+
+=> Intent
+• Admin can assign employees to shift slots
+
+=> Decision
+
+=> Domain Context
+•
+
+=> Session Boundaries
+•
+
+################################################
+
+=> Intent
+•
+
+=> Decision
+
+=> Domain Context
+•
+
+=> Session Boundaries
+•
