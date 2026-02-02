@@ -31,7 +31,7 @@ export default function SlotsClient({ initialShiftSlots, employees }: Props) {
     : [];
 
   async function handleAssignConfirm(employeeId: UUID) {
-    // fetch is blocked by CORS / mock limitation. It's here to demonstrate intent
+    /* fetch is blocked by CORS / mock limitation. It's here to demonstrate intent
     await fetch("/api/shift-slots/assign", {
       method: "POST",
       headers: {
@@ -41,7 +41,7 @@ export default function SlotsClient({ initialShiftSlots, employees }: Props) {
         slotId: selectedSlotId,
         employeeId,
       }),
-    });
+    }); */
 
     if (!selectedSlotId) return;
     const updatedShiftSlots = shiftSlots.map((s) => {
