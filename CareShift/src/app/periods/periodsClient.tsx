@@ -2,6 +2,8 @@
 import { useState } from "react";
 import Link from "next/link";
 
+import * as ui from "@/app/periods/uiCLasses";
+
 import type { SchedulePeriod } from "@/types/scheduling";
 import type { Departments } from "@/types/common";
 import { DEPARTMENTS } from "@/types/common";
@@ -64,9 +66,11 @@ export default function PeriodsClient({ periods }: Props) {
   }
 
   return (
-    <section>
-      <h1 className="font-semibold">CLIENT</h1>
+    <section className="flex flex-col items-center gap-6">
+      <h1 className={ui.title}>Periods</h1>
+      <h2 className={ui.subtitle}>Select department and week</h2>
       <select
+        className={ui.select}
         value={selectedDepartment}
         onChange={(e) => setSelectedDepartment(e.target.value as Departments)}
       >
@@ -76,35 +80,37 @@ export default function PeriodsClient({ periods }: Props) {
           </option>
         ))}
       </select>
-      <button onClick={() => changeMonday("previous")}>PREVIOUS</button>
-      <input
-        type="date"
-        value={selectedMonday}
-        onChange={(e) => {
-          const picked = parseDateOnly(e.target.value);
-          const monday = getMonday(picked);
-          setSelectedMonday(formatDateOnly(monday));
-          console.log(selectedMonday);
-        }}
-      />
-      <button className="border-red-500" onClick={() => changeMonday("next")}>
-        NEXT
-      </button>
-      <p className="mt-4">
+      <div className="space-x-5">
+        <button className={ui.button} onClick={() => changeMonday("previous")}>
+          PREVIOUS
+        </button>
+        <input
+          className={ui.inputCompact}
+          type="date"
+          value={selectedMonday}
+          onChange={(e) => {
+            const picked = parseDateOnly(e.target.value);
+            const monday = getMonday(picked);
+            setSelectedMonday(formatDateOnly(monday));
+            //  console.log(selectedMonday);
+          }}
+        />
+        <button className={ui.button} onClick={() => changeMonday("next")}>
+          NEXT
+        </button>
+      </div>
+      <p className={ui.subtitle}>
         selected week is <strong>{selectedMonday}</strong>
       </p>
-      <ul className="mt-2">
+      <ul className="w-full max-w-[60%] mx-auto space-y-3">
         {filteredPeriods.length === 0 ? (
-          <li>No data for this week</li>
+          <li className={ui.card}>No data for this week</li>
         ) : (
           filteredPeriods.map((p) => (
-            <li key={p.id}>
+            <li className={ui.card} key={p.id}>
               <span>{p.startDate}</span>
               <br />
-              <Link
-                className="bg-white underline text-blue-600 hover:text-blue-800"
-                href={`/periods/${p.id}`}
-              >
+              <Link className={ui.buttonGhost} href={`/periods/${p.id}`}>
                 Show details
               </Link>
             </li>

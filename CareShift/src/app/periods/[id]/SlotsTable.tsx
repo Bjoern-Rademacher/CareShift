@@ -1,7 +1,13 @@
+import * as ui from "@/app/periods/uiCLasses";
+
 import { ShiftSlot } from "@/types/scheduling";
+import { Employee } from "@/types/employee";
+import { UUID } from "@/types/common";
 
 type Props = {
   shiftSlots: ShiftSlot[];
+  employees: Employee[];
+  onAssignClick: (slotId: UUID) => void;
 };
 
 function formatDateTime(value: string): string {
@@ -17,30 +23,53 @@ function formatDateTime(value: string): string {
   }).format(d);
 }
 
-export default function SlotsTable({ shiftSlots }: Props) {
+export default function SlotsTable({
+  shiftSlots,
+  employees,
+  onAssignClick,
+}: Props) {
   if (shiftSlots.length === 0) {
     return <p>No slots for this period available.</p>;
   }
+
   return (
-    <article className="mt-6 overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="text-left">
-            <th className="border-b p-2">Start</th>
-            <th className="border-b p-2">End</th>
-            <th className="border-b p-2">Position</th>
-          </tr>
-        </thead>
-        <tbody>
-          {shiftSlots.map((slot) => (
-            <tr key={slot.id}>
-              <td className="border-b p-2">{formatDateTime(slot.startTime)}</td>
-              <td className="border-b p-2">{formatDateTime(slot.endTime)}</td>
-              <td className="border-b p-2">{slot.position}</td>
+    <article className={ui.card}>
+      <div className="overflow-x-auto">
+        <table className={ui.table}>
+          <thead>
+            <tr>
+              <th className={ui.th}>Start</th>
+              <th className={ui.th}>End</th>
+              <th className={ui.th}>Position</th>
+              <th className={ui.th}>Employee</th>
+              <th className={ui.th}></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {shiftSlots.map((slot) => {
+              const employee = employees.find((e) => e.id === slot.employeeId);
+              const employeeName = employee ? employee.name : "Unassigned";
+
+              return (
+                <tr key={slot.id} className={ui.rowHover}>
+                  <td className={ui.td}>{formatDateTime(slot.startTime)}</td>
+                  <td className={ui.td}>{formatDateTime(slot.endTime)}</td>
+                  <td className={ui.td}>{slot.position}</td>
+                  <td className={ui.td}>{employeeName}</td>
+                  <td className={ui.td}>
+                    <button
+                      className={ui.button}
+                      onClick={() => onAssignClick(slot.id)}
+                    >
+                      {slot.employeeId === null ? "Assign" : "Reassign"}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </article>
   );
 }

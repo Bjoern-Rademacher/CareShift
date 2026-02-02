@@ -47,7 +47,7 @@
 29 jan 2026
 
 => Intent
-• Admin can view shift slots for a selected period (read-only)
+• User can view shift slots for a selected period (read-only)
 
 => Decision
 • On /periods/:id, slots are fetched from the mock API and adapted via a small adapter function to keep UI data flow independent from the API response shape.
@@ -66,15 +66,46 @@
 
 ################################################
 
+31 jan 2026
+
 => Intent
-• Admin can assign employees to shift slots
+• Assign employees to shift slots
 
 => Decision
+• Assign is rendered per row because it is slot-scoped, colocated with the affected data, clearly arranged for the user, and avoids hidden selection state.
+• Assigning an employee updates the employeeId field on the selected slot in local UI state and sends a PATCH/PUT request to the mock API; persistence is not guaranteed.
+• Employee selection is handled in a modal dialog to isolate assignment state and avoid inline table complexity.
+
+=> Domain Context
+• Assigning employees to a slot is admin-only
+• Assignment is represented by setting employeeId on the slot.
+• Assignment rules (availability, conflicts, requirements) are domain concerns but not enforced in this slice.
+
+=> Session Boundaries
+• Availability-check
+• Employee requirements matching
+• Unassigning employee from slot
+
+################################################
+
+feb 2026
+
+=> Intent
+•
+
+=> Decision
+•
+•
+•
 
 => Domain Context
 •
+•
+•
 
 => Session Boundaries
+•
+•
 •
 
 ################################################
@@ -83,9 +114,16 @@
 •
 
 => Decision
+•
+•
+•
 
 => Domain Context
 •
+•
+•
 
 => Session Boundaries
+•
+•
 •
