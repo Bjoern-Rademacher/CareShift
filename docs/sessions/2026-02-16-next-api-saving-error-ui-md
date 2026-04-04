@@ -1,0 +1,27 @@
+# Session: Slot assignment
+
+## intent: Replace mockfast mutation with a Next.js API route stub, and wire saving/error UI for assignment (pessimistic update)
+
+## What works:
+
+- Assigning an employee calls Next.js api instead of mockfast
+- /api/shift-slots/[id] returns "{ok: true, assigned: {slotId, employeeId}}"
+- UI locks while saving
+- Error path added into Assign modal (modal stays open and shows inline error)
+- Local state updates only after success (pessimistic update)
+
+## Compromises:
+
+- Shift-slot updates are stored in local client state only (refresh resets)
+- Api response is currently a stub (no validation/persistence; echoes response)
+- Error handling is wired, but not being used yet - no real backend
+
+## Out of scope
+
+- Backend persistence / database
+- Availability / overlap checks
+- Role-based permissions
+
+## Next intent
+
+- Add current user source (dev auth)
