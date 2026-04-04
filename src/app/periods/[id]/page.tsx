@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getCurrentUser } from "@/auth/currentUser";
 
 import * as ui from "@/ui/classes";
 
@@ -16,6 +17,9 @@ export default async function PeriodsDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  const currentUser = await getCurrentUser();
+  const canAssign = currentUser?.role === "admin";
 
   const [periodsResponse, shiftSlotsResponse, employeesResponse] =
     await Promise.all([
@@ -49,7 +53,11 @@ export default async function PeriodsDetailPage({
         <p className={ui.subtitle}>Start Date: {period.startDate}</p>
         <p className={ui.subtitle}>Period ID: {period.id}</p>
         <p className={ui.subtitle}>Status: {period.status}</p>
-        <SlotsClient initialShiftSlots={shiftSlots} employees={employees} />
+        <SlotsClient
+          initialShiftSlots={shiftSlots}
+          employees={employees}
+          canAssign={canAssign}
+        />
         <Link className={ui.button} href="/periods">
           Back to periods
         </Link>

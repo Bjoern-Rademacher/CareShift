@@ -8,6 +8,7 @@ type Props = {
   shiftSlots: ShiftSlot[];
   employees: Employee[];
   onAssignClick: (slotId: UUID) => void;
+  canAssign: boolean;
 };
 
 function formatDateTime(value: string): string {
@@ -27,6 +28,7 @@ export default function SlotsTable({
   shiftSlots,
   employees,
   onAssignClick,
+  canAssign,
 }: Props) {
   if (shiftSlots.length === 0) {
     return <p>No slots for this period available.</p>;
@@ -57,12 +59,14 @@ export default function SlotsTable({
                   <td className={ui.td}>{slot.position}</td>
                   <td className={ui.td}>{employeeName}</td>
                   <td className={ui.td}>
-                    <button
-                      className={ui.button}
-                      onClick={() => onAssignClick(slot.id)}
-                    >
-                      {slot.employeeId === null ? "Assign" : "Reassign"}
-                    </button>
+                    {canAssign && (
+                      <button
+                        className={ui.button}
+                        onClick={() => onAssignClick(slot.id)}
+                      >
+                        {slot.employeeId === null ? "Assign" : "Reassign"}
+                      </button>
+                    )}
                   </td>
                 </tr>
               );

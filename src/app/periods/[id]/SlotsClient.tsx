@@ -12,6 +12,7 @@ import { UUID } from "@/types/common";
 type Props = {
   initialShiftSlots: ShiftSlot[];
   employees: Employee[];
+  canAssign: boolean;
 };
 
 type AssignedSlotResponse = {
@@ -19,7 +20,11 @@ type AssignedSlotResponse = {
   assigned: { slotId: UUID; employeeId: UUID };
 };
 
-export default function SlotsClient({ initialShiftSlots, employees }: Props) {
+export default function SlotsClient({
+  initialShiftSlots,
+  employees,
+  canAssign,
+}: Props) {
   const [shiftSlots, setShiftSlots] = useState<ShiftSlot[]>(initialShiftSlots);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedSlotId, setSelectedSlotId] = useState<UUID | null>(null);
@@ -34,6 +39,8 @@ export default function SlotsClient({ initialShiftSlots, employees }: Props) {
   }
 
   function onAssignClick(slotId: UUID) {
+    if (!canAssign) return;
+
     setAssignError(null);
     setSelectedSlotId(slotId);
     setIsAssignModalOpen(true);
@@ -97,6 +104,7 @@ export default function SlotsClient({ initialShiftSlots, employees }: Props) {
         shiftSlots={shiftSlots}
         employees={employees}
         onAssignClick={onAssignClick}
+        canAssign={canAssign}
       />
       {isAssignModalOpen && selectedSlotId && (
         <AssignModal
