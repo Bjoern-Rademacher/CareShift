@@ -2,14 +2,18 @@
 
 import { useState } from "react";
 
+import * as ui from "@/ui/classes";
+
 import SlotsTable from "@/app/periods/[id]/SlotsTable";
 import AssignModal from "@/app/periods/[id]/AssignModal";
+import PublishErrors from "@/app/periods/[id]/PublishErrors";
 
-import type { ShiftSlot } from "@/types/scheduling";
+import type { ShiftSlot, ValidationError } from "@/types/scheduling";
 import type { Employee } from "@/types/employee";
 import { UUID } from "@/types/common";
 
 type Props = {
+  periodId: UUID;
   initialShiftSlots: ShiftSlot[];
   employees: Employee[];
   canAssign: boolean;
@@ -21,6 +25,7 @@ type AssignedSlotResponse = {
 };
 
 export default function SlotsClient({
+  periodId,
   initialShiftSlots,
   employees,
   canAssign,
@@ -30,6 +35,14 @@ export default function SlotsClient({
   const [selectedSlotId, setSelectedSlotId] = useState<UUID | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
   const [isSavingAssign, setIsSavingAssign] = useState(false);
+  const [publishErrors, setPublishErrors] = useState<ValidationError[]>([]);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+
+  const selectedSlot = shiftSlots.find((s) => s.id === selectedSlotId);
+  const eligibleEmployees = selectedSlot
+    ? employees.filter((e) => e.departments.includes(selectedSlot.department))
+    : [];
 
   function handleCloseModal() {
     setIsAssignModalOpen(false);
@@ -46,11 +59,6 @@ export default function SlotsClient({
     setIsAssignModalOpen(true);
   }
 
-  const selectedSlot = shiftSlots.find((s) => s.id === selectedSlotId);
-  const eligibleEmployees = selectedSlot
-    ? employees.filter((e) => e.departments.includes(selectedSlot.department))
-    : [];
-
   async function assignEmployeeToSlot(
     slotId: UUID,
     employeeId: UUID,
@@ -64,6 +72,7 @@ export default function SlotsClient({
       const err = await res.json();
       throw new Error(err.error ?? "Request failed");
     }
+
     return res.json() as Promise<AssignedSlotResponse>;
   }
 
@@ -98,6 +107,45 @@ export default function SlotsClient({
     }
   }
 
+  async function publishPeriod(periodId: UUID) {
+    const res = await fetch(`/api/periods/${periodId}/publish`, {
+      method: "POST",
+    });
+
+    const data = await res.json();
+
+    if (res.status === 400) {
+      return data; // expected validation failure
+    }
+
+    if (!res.ok) {
+      throw new Error(data.error ?? "Publishing failed");
+    }
+
+    return data; // success
+  }
+
+  async function handlePublishClick() {
+    setIsPublishing(true);
+    setPublishErrors([]);
+
+    const result = await publishPeriod(periodId);
+
+    if (!result.ok) {
+      setPublishErrors(result.errors);
+      setIsErrorModalOpen(true);
+      setIsPublishing(false);
+      return;
+    }
+
+    setIsPublishing(false);
+  }
+
+  function handleCloseErrorModal() {
+    setPublishErrors([]);
+    setIsErrorModalOpen(false);
+  }
+
   return (
     <section>
       <SlotsTable
@@ -106,6 +154,12 @@ export default function SlotsClient({
         onAssignClick={onAssignClick}
         canAssign={canAssign}
       />
+      {canAssign && (
+        <button onClick={handlePublishClick} className={ui.button}>
+          {isPublishing ? "Publishing..." : "Publish Schedule"}
+        </button>
+      )}
+      <PublishErrors errors={publishErrors} onClose={handleCloseErrorModal} />
       {isAssignModalOpen && selectedSlotId && (
         <AssignModal
           employees={eligibleEmployees}

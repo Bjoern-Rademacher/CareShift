@@ -53,3 +53,10 @@ export interface SchedulePeriod {
 export interface PeriodsResponse {
   periods: SchedulePeriod[];
 }
+
+export type ValidationErrorCode = "MISSING_ASSIGNMENT" | "DOUBLE_ASSIGNMENT";
+
+export type ValidationError = {
+  code: ValidationErrorCode;
+  message: string;
+};

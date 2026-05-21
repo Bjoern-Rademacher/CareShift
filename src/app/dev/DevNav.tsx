@@ -6,6 +6,7 @@ import * as ui from "@/ui/classes";
 
 const links = [
   { href: "/", label: "Home" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/periods", label: "Periods" },
   { href: "/dev/login", label: "Dev Login" },
   { href: "/dev/logout", label: "Dev Logout" },
@@ -16,7 +17,7 @@ export default function DevNav() {
   const pathname = usePathname();
 
   return (
-    <nav className={ui.card}>
+    <nav className={`${ui.card} sticky top-0 z-50`}>
       <div className="flex flex-wrap items-center gap-2">
         {links.map((link) => {
           const isActive = pathname === link.href;

@@ -9,7 +9,11 @@ import SlotsClient from "@/app/periods/[id]/SlotsClient";
 import { PeriodsResponse, ShiftSlotsResponseDto } from "@/types/scheduling";
 import { EmployeesResponse } from "@/types/employee";
 
-import getData from "@/functions/fetchData";
+// import getData from "@/functions/fetchData";
+
+import { mockEmployees } from "@/lib/mock/employees";
+import { mockPeriods } from "@/lib/mock/periods";
+import { mockShiftSlots } from "@/lib/mock/shiftSlots";
 
 export default async function PeriodsDetailPage({
   params,
@@ -21,18 +25,27 @@ export default async function PeriodsDetailPage({
   const currentUser = await getCurrentUser();
   const canAssign = currentUser?.role === "admin";
 
+  /* 
   const [periodsResponse, shiftSlotsResponse, employeesResponse] =
-    await Promise.all([
-      getData<PeriodsResponse>(
-        "https://mockfast.io/backend/apitemplate/get/888213805131320/periods",
-      ),
-      getData<ShiftSlotsResponseDto>(
-        "https://mockfast.io/backend/apitemplate/get/888213805131320/shift-slots",
-      ),
-      getData<EmployeesResponse>(
-        "https://mockfast.io/backend/apitemplate/get/888213805131320/employee",
-      ),
-    ]);
+ 
+  await Promise.all([
+      getData<PeriodsResponse>("/api/mockPeriods"),
+      getData<ShiftSlotsResponseDto>("/api/mockShiftSlots"),
+      getData<EmployeesResponse>("/api/mockEmployees"),
+    ]); 
+  */
+
+  const periodsResponse: PeriodsResponse = {
+    periods: mockPeriods,
+  };
+
+  const shiftSlotsResponse: ShiftSlotsResponseDto = {
+    shiftSlots: mockShiftSlots,
+  };
+
+  const employeesResponse: EmployeesResponse = {
+    employees: mockEmployees,
+  };
 
   const period = periodsResponse.periods.find((p) => p.id === id);
   if (!period) {
@@ -54,6 +67,7 @@ export default async function PeriodsDetailPage({
         <p className={ui.subtitle}>Period ID: {period.id}</p>
         <p className={ui.subtitle}>Status: {period.status}</p>
         <SlotsClient
+          periodId={id}
           initialShiftSlots={shiftSlots}
           employees={employees}
           canAssign={canAssign}

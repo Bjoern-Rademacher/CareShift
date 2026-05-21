@@ -1,6 +1,7 @@
 import type { UUID } from "@/types/common";
 import { getCurrentUser } from "@/auth/currentUser";
 import { NextResponse } from "next/server";
+import { mockStore } from "@/lib/mock/store";
 
 type RouteParams = { id: UUID };
 
@@ -64,9 +65,25 @@ export async function PATCH(
   }
 
   const { employeeId } = parsed.body;
+  const slot = mockStore.shiftSlots.find((s) => s.id === slotId);
+
+  if (!slot) {
+    return Response.json(
+      { ok: false, error: "Shift slot not found" },
+      { status: 404 },
+    );
+  }
+
+  slot.employeeId = employeeId;
 
   return Response.json(
-    { ok: true, assigned: { slotId, employeeId } },
+    {
+      ok: true,
+      assigned: {
+        slotId: slot.id,
+        employeeId: slot.employeeId,
+      },
+    },
     { status: 200 },
   );
 }

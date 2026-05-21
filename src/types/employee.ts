@@ -12,6 +12,7 @@ export interface Employee {
   id: UUID;
   name: string;
   email: string;
+  password: string;
   employeePosition: EmployeePosition;
   departments: Departments[];
   status: EmployeeStatus;

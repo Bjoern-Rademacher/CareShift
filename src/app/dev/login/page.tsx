@@ -21,7 +21,7 @@ export default function DevLoginPage() {
 
   async function onPick(role: Role) {
     await devLogin(role);
-    router.push("/");
+    router.push("/dashboard");
     router.refresh();
   }
 

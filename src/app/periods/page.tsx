@@ -1,13 +1,14 @@
-import getData from "@/functions/fetchData";
+// import getData from "@/functions/fetchData";
 import { PeriodsResponse } from "@/types/scheduling";
+import { mockPeriods } from "@/lib/mock/periods";
+
 import PeriodsClient from "./periodsClient";
 
 export default async function PeriodsPage() {
-  const periodsData = await getData<PeriodsResponse>(
-    "https://mockfast.io/backend/apitemplate/get/888213805131320/periods"
-  );
-
-  console.log(periodsData);
+  // const periodsData = await getData<PeriodsResponse>("/api/mockPeriods");
+  const periodsData: PeriodsResponse = {
+    periods: mockPeriods,
+  };
 
   return (
     <main>

@@ -1,6 +1,6 @@
 export default async function getData<T>(
   url: string,
-  options?: RequestInit
+  options?: RequestInit,
 ): Promise<T> {
   const res = await fetch(url, {
     cache: "no-cache",
