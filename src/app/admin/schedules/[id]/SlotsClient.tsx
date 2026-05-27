@@ -4,9 +4,9 @@ import { useState } from "react";
 
 import * as ui from "@/ui/classes";
 
-import SlotsTable from "@/app/periods/[id]/SlotsTable";
-import AssignModal from "@/app/periods/[id]/AssignModal";
-import PublishErrors from "@/app/periods/[id]/PublishErrors";
+import SlotsTable from "@/app/admin/schedules/[id]/SlotsTable";
+import AssignModal from "@/app/admin/schedules/[id]/AssignModal";
+import PublishErrors from "@/app/admin/schedules/[id]/PublishErrors";
 
 import type { ShiftSlot, ValidationError } from "@/types/scheduling";
 import type { Employee } from "@/types/employee";
@@ -37,7 +37,6 @@ export default function SlotsClient({
   const [isSavingAssign, setIsSavingAssign] = useState(false);
   const [publishErrors, setPublishErrors] = useState<ValidationError[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
 
   const selectedSlot = shiftSlots.find((s) => s.id === selectedSlotId);
   const eligibleEmployees = selectedSlot
@@ -143,7 +142,6 @@ export default function SlotsClient({
 
   function handleCloseErrorModal() {
     setPublishErrors([]);
-    setIsErrorModalOpen(false);
   }
 
   return (

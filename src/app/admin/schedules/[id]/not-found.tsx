@@ -5,7 +5,7 @@ export default async function detailsNotFound() {
     <main>
       <h1>404 - not found</h1>
       <p>Sorry, but we could not find any data for the selected period.</p>
-      <Link href="/periods">Back to periods</Link>
+      <Link href="/schedules">Back to schedules</Link>
     </main>
   );
 }

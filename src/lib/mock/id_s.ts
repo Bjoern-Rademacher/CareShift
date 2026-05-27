@@ -26,3 +26,28 @@ export const periodIds = {
   icuWeek1: "2b1f46a9-d45d-4b3d-a9db-7f98245b5c21",
   surgeryWeek1: "96466d64-6cc4-438d-9f50-fcb8a933f35a",
 } as const;
+
+export const templateRuleIds = {
+  erNurseNight: "tr-er-nurse-night",
+  erNurseMorning: "tr-er-nurse-morning",
+  erNurseEvening: "tr-er-nurse-evening",
+
+  erDoctorMorning: "tr-er-doctor-morning",
+  erDoctorEvening: "tr-er-doctor-evening",
+
+  erAssistantMorning: "tr-er-assistant-morning",
+
+  icuNurseNight: "tr-icu-nurse-night",
+  icuNurseMorning: "tr-icu-nurse-morning",
+  icuNurseEvening: "tr-icu-nurse-evening",
+
+  icuDoctorMorning: "tr-icu-doctor-morning",
+  icuHeadDoctorMorning: "tr-icu-head-doctor-morning",
+
+  surgerySurgeonMorning: "tr-surgery-surgeon-morning",
+  surgeryNurseMorning: "tr-surgery-nurse-morning",
+  surgeryInternMorning: "tr-surgery-intern-morning",
+
+  radiologyDoctorMorning: "tr-radiology-doctor-morning",
+  radiologyAssistantMorning: "tr-radiology-assistant-morning",
+};

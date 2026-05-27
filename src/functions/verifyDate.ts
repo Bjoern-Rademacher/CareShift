@@ -6,3 +6,17 @@ export function createISODateString(date: string): ISODateString {
   }
   return date as ISODateString;
 }
+export function getMonday(date: Date): Date {
+  const d = new Date(date);
+  let dayOfWeek = d.getDay();
+
+  if (dayOfWeek === 0) {
+    dayOfWeek = 7;
+  }
+
+  const diff = dayOfWeek - 1;
+  d.setDate(d.getDate() - diff);
+  d.setHours(12, 0, 0, 0);
+
+  return d;
+}

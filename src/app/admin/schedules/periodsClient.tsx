@@ -4,12 +4,12 @@ import Link from "next/link";
 
 import * as ui from "@/ui/classes";
 
-import type { SchedulePeriod } from "@/types/scheduling";
+import type { Schedule } from "@/types/scheduling";
 import type { Departments } from "@/types/common";
 import { DEPARTMENTS } from "@/types/common";
 
 type Props = Readonly<{
-  periods: SchedulePeriod[];
+  periods: Schedule[];
 }>;
 
 function formatDateOnly(date: Date): string {
@@ -21,13 +21,13 @@ function formatDateOnly(date: Date): string {
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
-  let day = d.getDay();
+  let dayOfWeek = d.getDay();
 
-  if (day === 0) {
-    day = 7;
+  if (dayOfWeek === 0) {
+    dayOfWeek = 7;
   }
 
-  const diff = day - 1;
+  const diff = dayOfWeek - 1;
   d.setDate(d.getDate() - diff);
   d.setHours(12, 0, 0, 0);
 
@@ -38,8 +38,6 @@ function parseDateOnly(value: string): Date {
   const [y, m, d] = value.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
-
-// mit dem Montag können wir die periods auswählen
 
 export default function PeriodsClient({ periods }: Props) {
   const [selectedDepartment, setSelectedDepartment] =
@@ -110,7 +108,10 @@ export default function PeriodsClient({ periods }: Props) {
             <li className={ui.card} key={p.id}>
               <span>{p.startDate}</span>
               <br />
-              <Link className={ui.buttonGhost} href={`/periods/${p.id}`}>
+              <Link
+                className={ui.buttonGhost}
+                href={`/admin/schedules/${p.id}`}
+              >
                 Show details
               </Link>
             </li>

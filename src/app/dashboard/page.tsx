@@ -10,10 +10,10 @@ const dashboardLinks = [
     disabled: false,
   },
   {
-    href: "#",
+    href: "/admin/schedules/create",
     title: "Create Schedule",
     description: "Generate a new schedule period from department rules.",
-    disabled: true,
+    disabled: false,
   },
   {
     href: "/employees",
@@ -22,7 +22,7 @@ const dashboardLinks = [
     disabled: false,
   },
   {
-    href: "/periods",
+    href: "/schedules",
     title: "Published Schedules",
     description: "Review schedules that are already published.",
     disabled: false,

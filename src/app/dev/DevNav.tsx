@@ -7,7 +7,8 @@ import * as ui from "@/ui/classes";
 const links = [
   { href: "/", label: "Home" },
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/periods", label: "Periods" },
+  { href: "/schedules", label: "Schedules" },
+  { href: "/admin/schedules", label: "Admin/Schedules" },
   { href: "/dev/login", label: "Dev Login" },
   { href: "/dev/logout", label: "Dev Logout" },
   { href: "/api/auth/session", label: "Session" },

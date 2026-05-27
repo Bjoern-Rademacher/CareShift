@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/auth/currentUser";
 
 import * as ui from "@/ui/classes";
 
-import SlotsClient from "@/app/periods/[id]/SlotsClient";
+import SlotsClient from "@/app/admin/schedules/[id]/SlotsClient";
 
 import { PeriodsResponse, ShiftSlotsResponseDto } from "@/types/scheduling";
 import { EmployeesResponse } from "@/types/employee";
@@ -72,8 +72,8 @@ export default async function PeriodsDetailPage({
           employees={employees}
           canAssign={canAssign}
         />
-        <Link className={ui.button} href="/periods">
-          Back to periods
+        <Link className={ui.button} href="/admin/schedules">
+          Back to schedules
         </Link>
       </section>
     </main>

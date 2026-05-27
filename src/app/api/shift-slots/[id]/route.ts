@@ -30,10 +30,8 @@ async function parseJson(
   }
 }
 
-const METHOD_NOT_ALLOWED = Response.json(
-  { error: "Method not allowed" },
-  { status: 405 },
-);
+const METHOD_NOT_ALLOWED = () =>
+  Response.json({ error: "Method not allowed" }, { status: 405 });
 
 export async function PATCH(
   request: Request,

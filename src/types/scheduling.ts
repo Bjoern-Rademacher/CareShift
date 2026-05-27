@@ -42,7 +42,7 @@ export type ShiftSlotsResponseDto = {
   shiftSlots: ShiftSlotDto[];
 };
 
-export interface SchedulePeriod {
+export interface Schedule {
   id: UUID;
   department: Departments;
   startDate: ISODateString;
@@ -51,7 +51,7 @@ export interface SchedulePeriod {
 }
 
 export interface PeriodsResponse {
-  periods: SchedulePeriod[];
+  periods: Schedule[];
 }
 
 export type ValidationErrorCode = "MISSING_ASSIGNMENT" | "DOUBLE_ASSIGNMENT";

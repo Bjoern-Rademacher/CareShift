@@ -2,10 +2,13 @@ import { mockStore } from "@/lib/mock/store";
 
 import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
 
-export async function GET() {
-  return Response.json({
-    periods: mockStore.employees,
-  });
+export function GET() {
+  return Response.json(
+    {
+      templateRules: mockStore.templateRules,
+    },
+    { status: 200 },
+  );
 }
 
 export function POST() {
