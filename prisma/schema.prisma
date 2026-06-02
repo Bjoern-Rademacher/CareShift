@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Department {
+  ER
+  ICU
+  SURGERY
+  RADIOLOGY
+}
+
+enum Position {
+  DOCTOR
+  HEAD_DOCTOR
+  SURGEON
+  NURSE
+  INTERN
+  MEDICAL_ASSISTANT
+}
+
+model Employee {
+  id        String      @id @default(cuid())
+  firstName String
+  lastName  String
+  position  Position
+  department Department
+
+  shiftSlots ShiftSlot[]
+}
+
+model SchedulePeriod {
+  id         String      @id @default(cuid())
+  department Department
+
+  startDate DateTime
+  endDate   DateTime
+
+  published Boolean @default(false)
+
+  shiftSlots ShiftSlot[]
+}
+
+model ShiftSlot {
+  id String @id @default(cuid())
+
+  periodId String
+  period   SchedulePeriod @relation(fields: [periodId], references: [id])
+
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+
+  department Department
+  position   Position
+
+  startTime DateTime
+  endTime   DateTime
+}
