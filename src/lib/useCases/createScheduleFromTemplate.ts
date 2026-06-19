@@ -1,5 +1,5 @@
 import generateShiftSlots from "@/lib/functions/generateShiftSlots";
-import { getMonday } from "@/lib/functions/verifyDate";
+import { getMonday, getWeekdayDate } from "@/lib/functions/verifyDate";
 import {
   createSchedulePeriodFromTemplate,
   getSchedulePeriodByDepartmentAndStartDate,
@@ -20,8 +20,7 @@ export async function generateScheduleFromTemplate({
 }: GenerateScheduleFromTemplateInput) {
   const scheduleStartDate = getMonday(weekStartDate);
 
-  const scheduleEndDate = new Date(scheduleStartDate);
-  scheduleEndDate.setUTCDate(scheduleEndDate.getUTCDate() + 6);
+  const scheduleEndDate = getWeekdayDate(scheduleStartDate, 6);
 
   const existingSchedule = await getSchedulePeriodByDepartmentAndStartDate(
     department,
