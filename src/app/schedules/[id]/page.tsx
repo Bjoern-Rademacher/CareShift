@@ -5,7 +5,10 @@ import * as ui from "@/ui/classes";
 
 import SlotsTable from "@/app/admin/schedules/[id]/SlotsTable";
 
-import { mockStore } from "@/lib/mock/store";
+import { getSchedulePeriodById } from "@/lib/db/schedulePeriods";
+import { getAssignableEmployees } from "@/lib/db/employees";
+import { formatDateOnly } from "@/lib/functions/verifyDate";
+import { toUiShiftSlots } from "@/lib/db/mappers";
 
 export default async function ScheduleDetailPage({
   params,
@@ -14,15 +17,22 @@ export default async function ScheduleDetailPage({
 }) {
   const { id } = await params;
 
-  const period = mockStore.periods.find((p) => p.id === id);
+  console.log("ID:", id);
 
-  if (!period || period.status !== "published") {
+  const [period, employees] = await Promise.all([
+    getSchedulePeriodById(id),
+    getAssignableEmployees(),
+  ]);
+
+  console.log(employees, period);
+
+  if (!period || !period.published) {
     notFound();
   }
 
-  const shiftSlots = mockStore.shiftSlots.filter(
-    (slot) => slot.periodId === period.id,
-  );
+  console.log("Employees", employees);
+
+  const shiftSlots = toUiShiftSlots(period.shiftSlots);
 
   return (
     <main className={ui.page}>
@@ -32,12 +42,13 @@ export default async function ScheduleDetailPage({
         <p className={ui.subtitle}>Department: {period.department}</p>
 
         <p className={ui.subtitle}>
-          Period: {period.startDate} — {period.endDate}
+          Period: {formatDateOnly(period.startDate)} —{" "}
+          {formatDateOnly(period.endDate)}
         </p>
 
         <SlotsTable
           shiftSlots={shiftSlots}
-          employees={mockStore.employees}
+          employees={employees}
           onAssignClick={() => {}}
           canAssign={false}
         />

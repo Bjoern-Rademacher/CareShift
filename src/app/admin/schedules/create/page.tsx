@@ -9,8 +9,6 @@ import * as ui from "@/ui/classes";
 import type { Departments } from "@/types/common";
 import { DEPARTMENTS } from "@/types/common";
 
-import { mockStore } from "@/lib/mock/store";
-
 type CreateScheduleResponse =
   | {
       ok: true;
@@ -71,18 +69,6 @@ export default function CreateSchedulePage() {
 
       setMessage("Schedule created successfully.");
       setTargetScheduleId(data.schedule.id);
-
-      console.log("detail page id:", data.schedule.id);
-      console.log(
-        "available period ids:",
-        mockStore.periods.map((p) => p.id),
-      );
-
-      const period = mockStore.periods.find((p) => p.id === data.schedule.id);
-
-      console.log("found period:", Boolean(period));
-
-      console.log(data.schedule.id);
 
       router.push(`/admin/schedules/${data.schedule.id}`);
     } finally {

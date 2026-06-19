@@ -1,24 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import * as ui from "@/ui/classes";
 
-import { mockStore } from "@/lib/mock/store";
+import { AssignableEmployee } from "@/types/employee";
+
+import { getDepartmentLabel } from "@/lib/functions/departments";
 
 type Filter = "ALL" | "ACTIVE" | "DISABLED";
 
 export default function EmployeesPage() {
   const [filter, setFilter] = useState<Filter>("ACTIVE");
+  const [employees, setEmployees] = useState<AssignableEmployee[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredEmployees = mockStore.employees.filter((employee) => {
-    if (filter === "ALL") return true;
+  useEffect(() => {
+    async function loadEmployees() {
+      try {
+        setError(null);
 
-    return employee.status === filter;
-  });
+        const url =
+          filter === "ALL"
+            ? "/api/employees/display"
+            : `/api/employees/display?status=${filter}`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error("Failed to load employees");
+        }
+
+        const data = await response.json();
+
+        setEmployees(data.employees);
+      } catch {
+        setError("Failed to load employees");
+      }
+    }
+
+    loadEmployees().catch(console.error);
+  }, [filter]);
 
   return (
     <main className={ui.page}>
+      {error && <p>{error}</p>}
       <section className={`${ui.section} ${ui.card}`}>
         <h1 className={ui.title}>Employees</h1>
 
@@ -50,31 +76,30 @@ export default function EmployeesPage() {
         </section>
 
         <section className="mt-8 grid gap-4 md:grid-cols-2">
-          {filteredEmployees.map((employee) => (
+          {employees.map((employee) => (
             <article key={employee.id} className={ui.card}>
-              <h2 className="text-xl font-semibold">{employee.name}</h2>
-
-              <p className={ui.subtitle}>{employee.email}</p>
+              <h2 className="text-xl font-semibold">{`${employee.firstName} ${employee.lastName}`}</h2>
 
               <dl className="mt-4 space-y-2 text-sm">
                 <div>
-                  <dt className="font-medium">Position</dt>
-                  <dd>{employee.employeePosition}</dd>
+                  <dt className="text-base font-semibold">Position</dt>
+                  <dd>{employee.position}</dd>
                 </div>
 
                 <div>
-                  <dt className="font-medium">Departments</dt>
-                  <dd>{employee.departments.join(", ")}</dd>
+                  <dt className="text-base font-semibold">Departments</dt>
+                  <dd>
+                    <ul>
+                      {employee.departments.map((d) => (
+                        <li key={d}>{getDepartmentLabel(d)}</li>
+                      ))}
+                    </ul>
+                  </dd>
                 </div>
 
                 <div>
-                  <dt className="font-medium">Status</dt>
+                  <dt className="text-base font-semibold">Status</dt>
                   <dd>{employee.status}</dd>
-                </div>
-
-                <div>
-                  <dt className="font-medium">Access</dt>
-                  <dd>{employee.accessPermission}</dd>
                 </div>
               </dl>
 

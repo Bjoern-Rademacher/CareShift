@@ -20,13 +20,23 @@ export interface TemplateRule {
 
 export interface ShiftSlot {
   id: UUID;
-  periodId: UUID;
+  periodId?: UUID;
   employeeId: UUID | null;
   department: Departments;
   position: EmployeePosition;
-  startTime: ISODateString;
-  endTime: ISODateString;
+  startTime: Date;
+  endTime: Date;
 }
+
+export type DbShiftSlot = {
+  id: string;
+  periodId: string;
+  employeeId: string | null;
+  department: ShiftSlot["department"];
+  position: ShiftSlot["position"];
+  startTime: Date;
+  endTime: Date;
+};
 
 export type ShiftSlotDto = {
   id: UUID;

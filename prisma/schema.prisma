@@ -14,6 +14,11 @@ enum Department {
   RADIOLOGY
 }
 
+enum EmployeeStatus {
+  ACTIVE
+  DISABLED
+}
+
 enum Position {
   DOCTOR
   HEAD_DOCTOR
@@ -23,12 +28,23 @@ enum Position {
   MEDICAL_ASSISTANT
 }
 
+enum Weekday {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
 model Employee {
   id        String      @id @default(cuid())
   firstName String
   lastName  String
   position  Position
-  department Department
+  departments Department[] 
+  status     EmployeeStatus @default(ACTIVE)
 
   shiftSlots ShiftSlot[]
 }
@@ -59,4 +75,15 @@ model ShiftSlot {
 
   startTime DateTime
   endTime   DateTime
+}
+
+model TemplateRule {
+  id             String     @id @default(cuid())
+  department     Department
+  position       Position
+  weekdays       Weekday[]
+  startTimeLocal String
+  endTimeLocal   String
+  slots          Int
+  active         Boolean    @default(true)
 }

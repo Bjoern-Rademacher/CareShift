@@ -1,12 +1,14 @@
 import Link from "next/link";
 
 import * as ui from "@/ui/classes";
-import { mockStore } from "@/lib/mock/store";
 
-export default function SchedulesPage() {
-  const publishedPeriods = mockStore.periods.filter(
-    (period) => period.status === "published",
-  );
+import { getPublishedSchedulePeriods } from "@/lib/db/schedulePeriods";
+
+import { formatDateOnly } from "@/lib/functions/verifyDate";
+import { getDepartmentLabel } from "@/lib/functions/departments";
+
+export default async function SchedulesPage() {
+  const publishedPeriods = await getPublishedSchedulePeriods();
 
   return (
     <main className={ui.page}>
@@ -20,14 +22,15 @@ export default function SchedulesPage() {
         <section className="mt-8 grid gap-4 md:grid-cols-2">
           {publishedPeriods.map((period) => (
             <article key={period.id} className={ui.card}>
-              <h2 className="text-xl font-semibold">{period.department}</h2>
+              <h2 className="text-xl font-semibold">
+                {getDepartmentLabel(period.department)}
+              </h2>
 
               <p className={ui.subtitle}>
-                {period.startDate} — {period.endDate}
+                {formatDateOnly(period.startDate)} —{" "}
+                {formatDateOnly(period.endDate)}
               </p>
-
-              <p className="mt-2 text-sm">Status: {period.status}</p>
-
+              <br />
               <Link
                 href={`/schedules/${period.id}`}
                 className={`${ui.button} mt-4`}

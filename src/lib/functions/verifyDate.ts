@@ -20,3 +20,7 @@ export function getMonday(date: Date): Date {
 
   return d;
 }
+
+export function formatDateOnly(date: Date): string {
+  return new Intl.DateTimeFormat("de-DE").format(date);
+}

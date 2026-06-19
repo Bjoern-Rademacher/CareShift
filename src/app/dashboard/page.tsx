@@ -4,7 +4,7 @@ import * as ui from "@/ui/classes";
 
 const dashboardLinks = [
   {
-    href: "/periods",
+    href: "/admin/schedules",
     title: "Manage Periods",
     description: "Assign staff, review draft schedules, and publish periods.",
     disabled: false,

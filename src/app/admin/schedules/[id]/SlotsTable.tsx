@@ -1,12 +1,12 @@
 import * as ui from "@/ui/classes";
 
 import { ShiftSlot } from "@/types/scheduling";
-import { Employee } from "@/types/employee";
+import { AssignableEmployee } from "@/types/employee";
 import { UUID } from "@/types/common";
 
 type Props = {
   shiftSlots: ShiftSlot[];
-  employees: Employee[];
+  employees: AssignableEmployee[];
   onAssignClick: (slotId: UUID) => void;
   canAssign: boolean;
 };
@@ -50,7 +50,9 @@ export default function SlotsTable({
           <tbody>
             {shiftSlots.map((slot) => {
               const employee = employees.find((e) => e.id === slot.employeeId);
-              const employeeName = employee ? employee.name : "Unassigned";
+              const employeeName = employee
+                ? `${employee.firstName} ${employee.lastName}`
+                : "Unassigned";
 
               return (
                 <tr key={slot.id} className={ui.rowHover}>

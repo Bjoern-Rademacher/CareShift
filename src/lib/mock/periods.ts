@@ -1,5 +1,5 @@
 import type { SchedulePeriod } from "@/types/scheduling";
-import { createISODateString } from "@/functions/verifyDate";
+import { createISODateString } from "@/lib/functions/verifyDate";
 import { periodIds } from "./id_s";
 
 const iso = createISODateString;

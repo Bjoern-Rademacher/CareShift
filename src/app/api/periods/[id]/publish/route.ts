@@ -1,4 +1,4 @@
-import { validateSchedule } from "@/functions/validateSchedule";
+import { validateSchedule } from "@/lib/functions/validateSchedule";
 import { mockStore } from "@/lib/mock/store";
 
 export async function POST(

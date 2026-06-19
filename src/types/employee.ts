@@ -3,36 +3,35 @@ import {
   Departments,
   EmployeePosition,
   AccessPermission,
-  ISODateString,
 } from "@/types/common";
 
 export type EmployeeStatus = "ACTIVE" | "DISABLED";
 
-export interface Employee {
+export type EmployeeBase = {
   id: UUID;
-  name: string;
-  email: string;
-  password: string;
-  employeePosition: EmployeePosition;
-  departments: Departments[];
-  status: EmployeeStatus;
-  accessPermission: AccessPermission;
-  createdAt?: ISODateString;
-  updatedAt?: ISODateString;
-}
-
-export type EmployeeDto = {
-  id: UUID;
-  name: string;
-  email: string;
-  employeePosition: EmployeePosition;
-  departments: Departments[];
-  status: EmployeeStatus;
-  accessPermission: AccessPermission;
-  createdAt?: ISODateString;
-  updatedAt?: ISODateString;
+  firstName: string;
+  lastName: string;
 };
 
-export interface EmployeesResponse {
-  employees: Employee[];
-}
+export type DisplayEmployee = EmployeeBase;
+
+export type AssignableEmployee = EmployeeBase & {
+  departments: Departments[];
+  position: EmployeePosition;
+  status: EmployeeStatus;
+};
+
+export type EmployeeAdminView = EmployeeBase & {
+  email: string;
+  departments: Departments[];
+  position: EmployeePosition;
+  status: EmployeeStatus;
+  accessPermission: AccessPermission;
+};
+
+export type AuthUser = {
+  id: UUID;
+  email: string;
+  passwordHash: string;
+  accessPermission: AccessPermission;
+};
