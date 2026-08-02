@@ -1,18 +1,13 @@
-// import getData from "@/functions/fetchData";
-import { PeriodsResponse } from "@/types/scheduling";
-import { mockPeriods } from "@/lib/mock/periods";
-
 import PeriodsClient from "./periodsClient";
+import { getSchedulePeriods } from "@/lib/db/schedulePeriods";
+import { mapSchedulePeriodToSchedule } from "@/lib/db/mappers";
 
 export default async function PeriodsPage() {
-  // const periodsData = await getData<PeriodsResponse>("/api/mockPeriods");
-  const periodsData: PeriodsResponse = {
-    periods: mockPeriods,
-  };
-
+  const data = await getSchedulePeriods();
+  const periods = data.map(mapSchedulePeriodToSchedule);
   return (
     <main>
-      <PeriodsClient periods={periodsData.periods} />
+      <PeriodsClient periods={periods} />
     </main>
   );
 }

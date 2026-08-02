@@ -3,7 +3,7 @@ import {
   CreateSchedulePeriodInput,
   CreateShiftSlotInput,
 } from "@/types/db_types";
-import { Departments, ISODateString } from "@/types/common";
+import { Departments } from "@/types/common";
 
 export async function getSchedulePeriods() {
   return prisma.schedulePeriod.findMany({
@@ -98,5 +98,17 @@ export async function createSchedulePeriodFromTemplate(input: {
     });
 
     return period;
+  });
+}
+
+// publish schedule
+export function publishSchedulePeriod(id: string) {
+  return prisma.schedulePeriod.update({
+    where: {
+      id,
+    },
+    data: {
+      published: true,
+    },
   });
 }

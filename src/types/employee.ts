@@ -13,12 +13,21 @@ export type EmployeeBase = {
   lastName: string;
 };
 
-export type DisplayEmployee = EmployeeBase;
-
 export type AssignableEmployee = EmployeeBase & {
   departments: Departments[];
   position: EmployeePosition;
+};
+
+export type DisplayEmployee = EmployeeBase & {
+  departments: Departments[];
+  position: EmployeePosition;
   status: EmployeeStatus;
+};
+
+export type ValidatableEmployee = {
+  id: string;
+  firstName: string;
+  lastName: string;
 };
 
 export type EmployeeAdminView = EmployeeBase & {

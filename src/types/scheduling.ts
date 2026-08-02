@@ -17,28 +17,7 @@ export interface TemplateRule {
   slots: number;
   active: boolean;
 }
-
 export interface ShiftSlot {
-  id: UUID;
-  periodId?: UUID;
-  employeeId: UUID | null;
-  department: Departments;
-  position: EmployeePosition;
-  startTime: Date;
-  endTime: Date;
-}
-
-export type DbShiftSlot = {
-  id: string;
-  periodId: string;
-  employeeId: string | null;
-  department: ShiftSlot["department"];
-  position: ShiftSlot["position"];
-  startTime: Date;
-  endTime: Date;
-};
-
-export type ShiftSlotDto = {
   id: UUID;
   periodId: UUID;
   employeeId: UUID | null;
@@ -46,27 +25,57 @@ export type ShiftSlotDto = {
   position: EmployeePosition;
   startTime: ISODateString;
   endTime: ISODateString;
-};
+}
 
-export type ShiftSlotsResponseDto = {
-  shiftSlots: ShiftSlotDto[];
+export type DbShiftSlot = {
+  id: string;
+  periodId: string;
+  employeeId: string | null;
+  department: Departments;
+  position: EmployeePosition;
+  startTime: Date;
+  endTime: Date;
 };
-
-export interface Schedule {
+export interface SchedulePeriod {
   id: UUID;
   department: Departments;
   startDate: ISODateString;
   endDate: ISODateString;
-  status: "draft" | "published" | "needsRepublish";
+  published: boolean;
 }
 
-export interface PeriodsResponse {
-  periods: Schedule[];
-}
+export type PublishValidationErrorCode =
+  | "MISSING_ASSIGNMENT"
+  | "DOUBLE_ASSIGNMENT";
 
-export type ValidationErrorCode = "MISSING_ASSIGNMENT" | "DOUBLE_ASSIGNMENT";
-
-export type ValidationError = {
-  code: ValidationErrorCode;
+export type PublishValidationError = {
+  code: PublishValidationErrorCode;
   message: string;
+};
+
+export type AssignmentValidationError = {
+  code:
+    | "SHIFT_OVERLAP"
+    | "INSUFFICIENT_REST"
+    | "WEEKLY_HOURS_EXCEEDED"
+    | "NO_SLOT_SELECTED";
+  message: string;
+};
+
+export type ValidatablePeriod = {
+  id: string;
+  department: Departments;
+  startDate: Date;
+  endDate: Date;
+  published: boolean;
+};
+
+export type ValidatableShiftSlot = {
+  id: string;
+  periodId: string;
+  employeeId: string | null;
+  department: Departments;
+  position: EmployeePosition;
+  startTime: Date;
+  endTime: Date;
 };

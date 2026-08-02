@@ -1,107 +1,68 @@
-import type { UUID } from "@/types/common";
-import { getCurrentUser } from "@/auth/currentUser";
-import { NextResponse } from "next/server";
+// src/app/api/shift-slots/[id]/route.ts
+
 import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
-import {
-  assignEmployeeToShiftSlot,
-  unassignEmployeeFromShiftSlot,
-} from "@/lib/db/shiftSlots";
+import { assignEmployeeToShiftSlot } from "@/lib/useCases/assignEmployeeToShiftSlot";
 
-type RouteParams = { id: UUID };
+import type { UUID } from "@/types/common";
 
-type AssignBody =
-  | {
-      action: "assign";
-      employeeId: UUID;
-    }
-  | {
-      action: "unassign";
-    };
+type AssignShiftSlotRequest = {
+  employeeId: UUID;
+};
 
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
+function isAssignShiftSlotRequest(
+  value: unknown,
+): value is AssignShiftSlotRequest {
+  if (!value || typeof value !== "object") return false;
 
-function isAssignBody(body: unknown): body is AssignBody {
-  if (typeof body !== "object" || body === null) return false;
+  const body = value as Record<string, unknown>;
 
-  const record = body as Record<string, unknown>;
-
-  if (record.action === "assign") {
-    return isNonEmptyString(record.employeeId);
-  }
-
-  if (record.action === "unassign") {
-    return true;
-  }
-
-  return false;
-}
-
-async function parseJson(
-  request: Request,
-): Promise<{ ok: true; body: unknown } | { ok: false }> {
-  try {
-    const body = await request.json();
-    return { ok: true, body };
-  } catch {
-    return { ok: false };
-  }
+  return typeof body.employeeId === "string";
 }
 
 export async function PATCH(
   request: Request,
-  context: { params: Promise<RouteParams> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (currentUser.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const slotId = (await context.params).id;
-
-  if (!isNonEmptyString(slotId)) {
-    return NextResponse.json({ error: "Missing slot id" }, { status: 400 });
-  }
-
-  const parsed = await parseJson(request);
-
-  if (!parsed.ok) {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  if (!isAssignBody(parsed.body)) {
-    return NextResponse.json(
-      { error: "Invalid assign action" },
-      { status: 400 },
-    );
-  }
-
   try {
-    const slot =
-      parsed.body.action === "assign"
-        ? await assignEmployeeToShiftSlot(slotId, parsed.body.employeeId)
-        : await unassignEmployeeFromShiftSlot(slotId);
+    const { id } = await params;
+    const body: unknown = await request.json();
 
-    return NextResponse.json(
-      {
-        ok: true,
-        assigned: {
-          slotId: slot.id,
-          employeeId: slot.employeeId,
+    if (!isAssignShiftSlotRequest(body)) {
+      return Response.json(
+        {
+          ok: false,
+          error: "Employee id is required.",
         },
+        { status: 400 },
+      );
+    }
+
+    const result = await assignEmployeeToShiftSlot({
+      slotId: id as UUID,
+      employeeId: body.employeeId,
+    });
+
+    // Expected business-rule failure.
+    if (!result.ok && "errors" in result) {
+      return Response.json(result, { status: 409 });
+    }
+
+    // The requested employee or shift slot does not exist.
+    if (!result.ok) {
+      return Response.json(result, { status: 404 });
+    }
+
+    return Response.json(result, { status: 200 });
+  } catch (error) {
+    console.error("Failed to assign employee to shift slot:", error);
+
+    // Unexpected application, database, or runtime failure.
+    return Response.json(
+      {
+        ok: false,
+        error: "Failed to assign employee to shift slot.",
       },
-      { status: 200 },
-    );
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Shift slot update failed" },
-      { status: 400 },
+      { status: 500 },
     );
   }
 }
@@ -111,6 +72,10 @@ export function GET() {
 }
 
 export function POST() {
+  return METHOD_NOT_ALLOWED;
+}
+
+export function PUT() {
   return METHOD_NOT_ALLOWED;
 }
 

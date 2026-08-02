@@ -1,11 +1,26 @@
 import { prisma } from "@/lib/db/prisma";
+import { EmployeeStatus } from "@/generated/prisma/enums";
 
-import type { EmployeeStatus } from "@/types/employee";
+export async function getEmployeeById(id: string) {
+  return prisma.employee.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      departments: true,
+      position: true,
+      status: true,
+    },
+  });
+}
 
 export async function getAssignableEmployees() {
   return prisma.employee.findMany({
     where: {
-      // later: isActive: true
+      status: EmployeeStatus.ACTIVE,
     },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     select: {
@@ -14,7 +29,6 @@ export async function getAssignableEmployees() {
       lastName: true,
       departments: true,
       position: true,
-      // later: isActive: true
     },
   });
 }

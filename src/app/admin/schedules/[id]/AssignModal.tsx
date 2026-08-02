@@ -2,15 +2,24 @@
 
 import * as ui from "@/ui/classes";
 
-import { UUID } from "@/types/common";
-import { Employee } from "@/types/employee";
+import {
+  ValidationErrors,
+  SystemErrors,
+} from "@/app/admin/schedules/[id]/ErrorComponents";
+
+import type { UUID } from "@/types/common";
+import type { AssignableEmployee } from "@/types/employee";
+import type { AssignmentValidationError } from "@/types/scheduling";
 
 type Props = {
-  employees: Employee[];
+  employees: AssignableEmployee[];
   onConfirm: (employeeId: UUID) => void;
   onClose: () => void;
   isSaving: boolean;
-  errorMessage: string | null;
+  validationErrors: AssignmentValidationError[];
+  closeValidationErrors: () => void;
+  systemError: string | null;
+  closeSystemError: () => void;
 };
 
 export default function AssignModal({
@@ -18,7 +27,10 @@ export default function AssignModal({
   onConfirm,
   onClose,
   isSaving,
-  errorMessage,
+  validationErrors,
+  closeValidationErrors,
+  systemError,
+  closeSystemError,
 }: Props) {
   return (
     <section
@@ -37,20 +49,22 @@ export default function AssignModal({
           <h3 className={ui.title}>Assign employee</h3>
         </header>
 
-        {errorMessage && (
-          <div role="alert" className={ui.errorAlert}>
-            {errorMessage}
-          </div>
-        )}
+        <ValidationErrors
+          title="Assignment not Possible"
+          errors={validationErrors}
+          onClose={closeValidationErrors}
+        />
+
+        <SystemErrors message={systemError} onClose={closeSystemError} />
 
         <ul className="space-y-3 max-h-150 overflow-y-auto pr-1">
           {employees.map((e) => (
             <li key={e.id} className={ui.card}>
               <article className="flex items-start justify-between gap-3">
                 <div>
-                  <strong className="block">{e.name}</strong>
+                  <strong className="block">{`${e.firstName} ${e.lastName}`}</strong>
                   <p className={ui.subtitle}>
-                    {e.employeePosition} • {e.departments.join(", ")}
+                    {e.position} • {e.departments.join(", ")}
                   </p>
                 </div>
 

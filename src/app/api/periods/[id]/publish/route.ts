@@ -1,5 +1,11 @@
+import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
+import { getAssignableEmployees } from "@/lib/db/employees";
+import {
+  getSchedulePeriodById,
+  publishSchedulePeriod,
+} from "@/lib/db/schedulePeriods";
+import { mapSchedulePeriodToSchedule } from "@/lib/db/mappers";
 import { validateSchedule } from "@/lib/functions/validateSchedule";
-import { mockStore } from "@/lib/mock/store";
 
 export async function POST(
   _request: Request,
@@ -7,24 +13,55 @@ export async function POST(
 ) {
   const { id } = await context.params;
 
-  const period = mockStore.periods.find((p) => p.id === id);
+  const period = await getSchedulePeriodById(id);
 
   if (!period) {
     return Response.json(
-      { ok: false, error: "Period not found" },
+      {
+        ok: false,
+        error: "Period not found",
+      },
       { status: 404 },
     );
   }
 
-  const shiftSlots = mockStore.shiftSlots.filter((s) => s.periodId === id);
+  const employees = await getAssignableEmployees();
 
-  const errors = validateSchedule(period, shiftSlots, mockStore.employees);
+  const validationErrors = validateSchedule(period.shiftSlots, employees);
 
-  if (errors.length > 0) {
-    return Response.json({ ok: false, errors }, { status: 200 });
+  if (validationErrors.length > 0) {
+    return Response.json(
+      {
+        ok: false,
+        errors: validationErrors,
+      },
+      { status: 409 },
+    );
   }
 
-  period.status = "published";
+  const publishedPeriod = await publishSchedulePeriod(id);
 
-  return Response.json({ ok: true, period }, { status: 200 });
+  return Response.json(
+    {
+      ok: true,
+      period: mapSchedulePeriodToSchedule(publishedPeriod),
+    },
+    { status: 200 },
+  );
+}
+
+export function GET() {
+  return METHOD_NOT_ALLOWED;
+}
+
+export function PATCH() {
+  return METHOD_NOT_ALLOWED;
+}
+
+export function PUT() {
+  return METHOD_NOT_ALLOWED;
+}
+
+export function DELETE() {
+  return METHOD_NOT_ALLOWED;
 }

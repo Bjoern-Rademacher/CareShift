@@ -1,6 +1,9 @@
 import type { ISODateString, UUID } from "@/types/common";
-import type { ShiftSlot } from "@/types/scheduling";
-import { DbShiftSlot } from "@/types/scheduling";
+import type {
+  ShiftSlot,
+  SchedulePeriod,
+  DbShiftSlot,
+} from "@/types/scheduling";
 
 export function toUiShiftSlot(slot: DbShiftSlot): ShiftSlot {
   return {
@@ -16,4 +19,24 @@ export function toUiShiftSlot(slot: DbShiftSlot): ShiftSlot {
 
 export function toUiShiftSlots(slots: DbShiftSlot[]): ShiftSlot[] {
   return slots.map(toUiShiftSlot);
+}
+
+import type { SchedulePeriodModel } from "@/generated/prisma/models/SchedulePeriod";
+
+export function mapSchedulePeriodToSchedule(
+  period: SchedulePeriodModel,
+): SchedulePeriod {
+  return {
+    id: period.id,
+    department: period.department,
+    startDate: period.startDate.toISOString() as ISODateString,
+    endDate: period.endDate.toISOString() as ISODateString,
+    published: period.published,
+  };
+}
+
+export function mapSchedulePeriodsToSchedules(
+  periods: SchedulePeriodModel[],
+): SchedulePeriod[] {
+  return periods.map(mapSchedulePeriodToSchedule);
 }

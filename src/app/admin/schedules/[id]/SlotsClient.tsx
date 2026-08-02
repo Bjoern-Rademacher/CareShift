@@ -1,147 +1,226 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import * as ui from "@/ui/classes";
 
 import SlotsTable from "@/app/admin/schedules/[id]/SlotsTable";
 import AssignModal from "@/app/admin/schedules/[id]/AssignModal";
-import PublishErrors from "@/app/admin/schedules/[id]/PublishErrors";
+import {
+  ValidationErrors,
+  SystemErrors,
+} from "@/app/admin/schedules/[id]/ErrorComponents";
 
-import type { ShiftSlot, ValidationError } from "@/types/scheduling";
-import type { Employee } from "@/types/employee";
-import { UUID } from "@/types/common";
+import type {
+  SchedulePeriod,
+  ShiftSlot,
+  PublishValidationError,
+} from "@/types/scheduling";
+import type { AssignmentValidationError } from "@/types/scheduling";
+import type { AssignableEmployee } from "@/types/employee";
+import type { UUID } from "@/types/common";
 
 type Props = {
   periodId: UUID;
-  initialShiftSlots: ShiftSlot[];
-  employees: Employee[];
+  shiftSlots: ShiftSlot[];
+  employees: AssignableEmployee[];
   canAssign: boolean;
 };
 
-type AssignedSlotResponse = {
-  ok: true;
-  assigned: { slotId: UUID; employeeId: UUID };
-};
+type AssignEmployeeResponse =
+  | {
+      ok: true;
+      assigned: {
+        slotId: UUID;
+        employeeId: UUID;
+      };
+    }
+  | {
+      ok: false;
+      errors: AssignmentValidationError[];
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+type PublishPeriodResponse =
+  | {
+      ok: true;
+      period: SchedulePeriod;
+    }
+  | {
+      ok: false;
+      errors: PublishValidationError[];
+    };
 
 export default function SlotsClient({
   periodId,
-  initialShiftSlots,
+  shiftSlots,
   employees,
   canAssign,
 }: Props) {
-  const [shiftSlots, setShiftSlots] = useState<ShiftSlot[]>(initialShiftSlots);
+  const router = useRouter();
+
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedSlotId, setSelectedSlotId] = useState<UUID | null>(null);
-  const [assignError, setAssignError] = useState<string | null>(null);
   const [isSavingAssign, setIsSavingAssign] = useState(false);
-  const [publishErrors, setPublishErrors] = useState<ValidationError[]>([]);
+
+  const [publishErrors, setPublishErrors] = useState<PublishValidationError[]>(
+    [],
+  );
+  const [publishSystemError, setPublishSystemError] = useState<string | null>(
+    null,
+  );
+  const [assignmentValidationErrors, setAssignmentValidationErrors] = useState<
+    AssignmentValidationError[]
+  >([]);
+  const [assignSystemError, setAssignSystemError] = useState<string | null>(
+    null,
+  );
   const [isPublishing, setIsPublishing] = useState(false);
 
   const selectedSlot = shiftSlots.find((s) => s.id === selectedSlotId);
+
   const eligibleEmployees = selectedSlot
-    ? employees.filter((e) => e.departments.includes(selectedSlot.department))
+    ? employees.filter(
+        (employee) =>
+          employee.departments.includes(selectedSlot.department) &&
+          employee.position === selectedSlot.position,
+      )
     : [];
 
   function handleCloseModal() {
     setIsAssignModalOpen(false);
     setSelectedSlotId(null);
-    setAssignError(null);
+    setAssignmentValidationErrors([]);
     setIsSavingAssign(false);
   }
 
   function onAssignClick(slotId: UUID) {
     if (!canAssign) return;
 
-    setAssignError(null);
+    setAssignmentValidationErrors([]);
     setSelectedSlotId(slotId);
     setIsAssignModalOpen(true);
   }
 
-  async function assignEmployeeToSlot(
+  async function assignEmployeeRequest(
     slotId: UUID,
     employeeId: UUID,
-  ): Promise<AssignedSlotResponse> {
+  ): Promise<AssignEmployeeResponse> {
     const res = await fetch(`/api/shift-slots/${slotId}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ employeeId }),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error ?? "Request failed");
+
+    const data = await res.json();
+
+    // Expected business-rule failure.
+    if (res.status === 409) {
+      return data;
     }
 
-    return res.json() as Promise<AssignedSlotResponse>;
+    // Invalid request, missing resource, or unexpected system failure.
+    if (!res.ok) {
+      throw new Error(data.error ?? "Assignment failed.");
+    }
+
+    return data;
   }
 
   async function handleAssignConfirm(employeeId: UUID) {
     if (!selectedSlotId) {
-      setAssignError("No slot selected");
-      return;
-    }
-    if (!employeeId) {
-      setAssignError("No employee id");
+      setAssignmentValidationErrors([
+        {
+          code: "NO_SLOT_SELECTED",
+          message: "No slot selected.",
+        },
+      ]);
       return;
     }
 
-    setAssignError(null);
+    setAssignmentValidationErrors([]);
+    setAssignSystemError(null);
     setIsSavingAssign(true);
 
     try {
-      const res = await assignEmployeeToSlot(selectedSlotId, employeeId);
+      const result = await assignEmployeeRequest(selectedSlotId, employeeId);
 
-      setShiftSlots((prev) =>
-        prev.map((s) =>
-          s.id === res.assigned.slotId
-            ? { ...s, employeeId: res.assigned.employeeId }
-            : s,
-        ),
-      );
+      // Keep the modal open when assignment rules reject the request.
+      if (!result.ok) {
+        if ("errors" in result) {
+          setAssignmentValidationErrors(result.errors);
+          return;
+        }
+      }
 
+      // Close only after a successful assignment.
       handleCloseModal();
+      router.refresh();
     } catch (err) {
-      setAssignError(err instanceof Error ? err.message : "Unexpected error");
+      // Keep the modal open for request or system failures.
+      setAssignSystemError(
+        err instanceof Error ? err.message : "Unexpected error",
+      );
+    } finally {
       setIsSavingAssign(false);
     }
   }
 
-  async function publishPeriod(periodId: UUID) {
+  async function publishPeriod(periodId: UUID): Promise<PublishPeriodResponse> {
     const res = await fetch(`/api/periods/${periodId}/publish`, {
       method: "POST",
     });
 
     const data = await res.json();
 
-    if (res.status === 400) {
-      return data; // expected validation failure
+    // Expected business validation failure.
+    if (res.status === 409) {
+      return data;
     }
 
+    // Unexpected server or network failure.
     if (!res.ok) {
-      throw new Error(data.error ?? "Publishing failed");
+      throw new Error(data.error ?? "Publishing failed.");
     }
 
-    return data; // success
+    return data;
   }
 
   async function handlePublishClick() {
     setIsPublishing(true);
     setPublishErrors([]);
+    setPublishSystemError(null);
 
-    const result = await publishPeriod(periodId);
+    try {
+      const result = await publishPeriod(periodId);
 
-    if (!result.ok) {
-      setPublishErrors(result.errors);
-      setIsErrorModalOpen(true);
+      // Schedule violates publishing rules.
+      if (!result.ok) {
+        setPublishErrors(result.errors);
+        return;
+      }
+
+      // Reload the published state from the database.
+      router.refresh();
+    } catch (error) {
+      // Publishing failed for a technical or unexpected reason.
+      setPublishSystemError(
+        error instanceof Error ? error.message : "Publishing failed.",
+      );
+    } finally {
       setIsPublishing(false);
-      return;
     }
-
-    setIsPublishing(false);
   }
 
   function handleCloseErrorModal() {
     setPublishErrors([]);
+    setPublishSystemError(null);
   }
 
   return (
@@ -152,19 +231,33 @@ export default function SlotsClient({
         onAssignClick={onAssignClick}
         canAssign={canAssign}
       />
+
       {canAssign && (
         <button onClick={handlePublishClick} className={ui.button}>
           {isPublishing ? "Publishing..." : "Publish Schedule"}
         </button>
       )}
-      <PublishErrors errors={publishErrors} onClose={handleCloseErrorModal} />
+
+      <ValidationErrors
+        title={"Cannot publish schedule."}
+        errors={publishErrors}
+        onClose={handleCloseErrorModal}
+      />
+      <SystemErrors
+        message={publishSystemError}
+        onClose={handleCloseErrorModal}
+      />
+
       {isAssignModalOpen && selectedSlotId && (
         <AssignModal
           employees={eligibleEmployees}
           onConfirm={handleAssignConfirm}
           onClose={handleCloseModal}
           isSaving={isSavingAssign}
-          errorMessage={assignError}
+          validationErrors={assignmentValidationErrors}
+          closeValidationErrors={() => setAssignmentValidationErrors([])}
+          systemError={assignSystemError}
+          closeSystemError={() => setAssignSystemError(null)}
         />
       )}
     </section>

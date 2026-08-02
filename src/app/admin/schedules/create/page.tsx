@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 
 import * as ui from "@/ui/classes";
 
-import type { Departments } from "@/types/common";
-import { DEPARTMENTS } from "@/types/common";
+import { Departments, DEPARTMENTS, UUID } from "@/types/common";
+import { ScheduleErrorCode } from "@/domain/errors/scheduleErrors";
+
+import { scheduleErrorMessages } from "@/domain/errors/scheduleErrors";
 
 type CreateScheduleResponse =
   | {
@@ -18,10 +20,8 @@ type CreateScheduleResponse =
     }
   | {
       ok: false;
-      code?: string;
-      message?: string;
-      error?: string;
-      scheduleId?: string;
+      code: ScheduleErrorCode;
+      scheduleId: UUID;
     };
 
 export default function CreateSchedulePage() {
@@ -56,9 +56,7 @@ export default function CreateSchedulePage() {
       const data = (await res.json()) as CreateScheduleResponse;
 
       if (!data.ok) {
-        setMessage(
-          data.message ?? data.error ?? "Schedule could not be created.",
-        );
+        setMessage(scheduleErrorMessages[data.code]);
 
         if (data.scheduleId) {
           setTargetScheduleId(data.scheduleId);
@@ -128,13 +126,12 @@ export default function CreateSchedulePage() {
         </form>
 
         {message && <p className={`${ui.errorAlert} mt-6`}>{message}</p>}
-
         {targetScheduleId && (
           <Link
             className={`${ui.button} mt-4`}
             href={`/admin/schedules/${targetScheduleId}`}
           >
-            Open schedule
+            Go to schedule
           </Link>
         )}
       </section>
