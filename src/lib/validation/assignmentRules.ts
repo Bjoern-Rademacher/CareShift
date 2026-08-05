@@ -102,17 +102,18 @@ function checkWeeklyHours(
 
 export function validateAssignment(
   targetSlot: ValidatableShiftSlot,
-  employeeSlots: ValidatableShiftSlot[],
+  nearbySlots: ValidatableShiftSlot[],
+  weeklySlots: ValidatableShiftSlot[],
 ): AssignmentValidationError[] {
   const errors: AssignmentValidationError[] = [];
 
-  const overlapError = checkShiftOverlap(targetSlot, employeeSlots);
+  const overlapError = checkShiftOverlap(targetSlot, nearbySlots);
   if (overlapError) errors.push(overlapError);
 
-  const restError = checkMinimumRestPeriod(targetSlot, employeeSlots);
+  const restError = checkMinimumRestPeriod(targetSlot, nearbySlots);
   if (restError) errors.push(restError);
 
-  const weeklyHoursError = checkWeeklyHours(targetSlot, employeeSlots);
+  const weeklyHoursError = checkWeeklyHours(targetSlot, weeklySlots);
   if (weeklyHoursError) errors.push(weeklyHoursError);
 
   return errors;

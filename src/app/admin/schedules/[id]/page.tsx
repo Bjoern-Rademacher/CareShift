@@ -1,12 +1,16 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+
 import { getCurrentUser } from "@/auth/currentUser";
 
 import * as ui from "@/ui/classes";
 
-import SlotsClient from "@/app/admin/schedules/[id]/SlotsClient";
+import ScheduleHeader from "./components/ScheduleHeader";
+import SlotsClient from "./components/SlotsClient";
 
-import { createISODateString } from "@/lib/functions/verifyDate";
+import {
+  mapSchedulePeriodToSchedule,
+  mapShiftSlotToSchedule,
+} from "@/lib/mappers/scheduleMappers";
 
 import { getSchedulePeriodById } from "@/lib/db/schedulePeriods";
 import { getAssignableEmployees } from "@/lib/db/employees";
@@ -30,41 +34,28 @@ export default async function PeriodsDetailPage({
     notFound();
   }
 
-  const shiftSlots = period.shiftSlots.map((slot) => ({
-    id: slot.id,
-    periodId: slot.periodId,
-    employeeId: slot.employeeId,
-    department: slot.department,
-    position: slot.position,
-    startTime: createISODateString(slot.startTime.toISOString()),
-    endTime: createISODateString(slot.endTime.toISOString()),
-  }));
+  // Map Prisma Date objects into serializable client-facing types.
+  const schedulePeriod = mapSchedulePeriodToSchedule(period);
+
+  const shiftSlots = period.shiftSlots.map(mapShiftSlotToSchedule);
 
   return (
     <main className={ui.page}>
       <section className={ui.section}>
-        <h2 className={ui.title}>Department: {period.department}</h2>
-
-        <p className={ui.subtitle}>
-          Start Date: {period.startDate.toISOString()}
-        </p>
-
-        <p className={ui.subtitle}>Period ID: {period.id}</p>
-
-        <p className={ui.subtitle}>
-          Status: {period.published ? "published" : "draft"}
-        </p>
+        <ScheduleHeader
+          periodId={schedulePeriod.id}
+          department={schedulePeriod.department}
+          startDate={schedulePeriod.startDate}
+          endDate={schedulePeriod.endDate}
+          published={schedulePeriod.published}
+        />
 
         <SlotsClient
-          periodId={id}
+          periodId={schedulePeriod.id}
           shiftSlots={shiftSlots}
           employees={employees}
           canAssign={canAssign}
         />
-
-        <Link className={ui.button} href="/admin/schedules">
-          Back to schedules
-        </Link>
       </section>
     </main>
   );

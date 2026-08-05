@@ -1,6 +1,7 @@
 import {
-  getShiftSlotById,
+  getEmployeeShiftSlotsAroundShift,
   getEmployeeShiftSlotsForWeek,
+  getShiftSlotById,
   updateShiftSlotEmployee,
 } from "@/lib/db/shiftSlots";
 import { getEmployeeById } from "@/lib/db/employees";
@@ -8,7 +9,7 @@ import { getEmployeeById } from "@/lib/db/employees";
 import { validateAssignment } from "@/lib/validation/assignmentRules";
 
 import type { UUID } from "@/types/common";
-import type { AssignmentValidationError } from "@/lib/validation/assignmentRules";
+import type { AssignmentValidationError } from "@/types/scheduling";
 
 type AssignEmployeeResponse =
   | {
@@ -21,6 +22,10 @@ type AssignEmployeeResponse =
   | {
       ok: false;
       errors: AssignmentValidationError[];
+    }
+  | {
+      ok: false;
+      error: string;
     };
 
 type AssignEmployeeToShiftSlotInput = {
@@ -31,14 +36,14 @@ type AssignEmployeeToShiftSlotInput = {
 export async function assignEmployeeToShiftSlot({
   slotId,
   employeeId,
-}: AssignEmployeeToShiftSlotInput) {
+}: AssignEmployeeToShiftSlotInput): Promise<AssignEmployeeResponse> {
   const slot = await getShiftSlotById(slotId);
 
   if (!slot) {
     return {
       ok: false,
       error: "Shift slot not found.",
-    } as const;
+    };
   }
 
   const employee = await getEmployeeById(employeeId);
@@ -47,44 +52,55 @@ export async function assignEmployeeToShiftSlot({
     return {
       ok: false,
       error: "Employee not found.",
-    } as const;
+    };
   }
 
-  // Defensive validation.
+  // Requests must still be validated on the backend even though
+  // the frontend only displays eligible employees.
   if (employee.status !== "ACTIVE") {
     return {
       ok: false,
       error: "Employee is inactive.",
-    } as const;
+    };
   }
 
   if (!employee.departments.includes(slot.department)) {
     return {
       ok: false,
       error: "Employee cannot work in this department.",
-    } as const;
+    };
   }
 
   if (employee.position !== slot.position) {
     return {
       ok: false,
       error: "Employee has the wrong position.",
-    } as const;
+    };
   }
 
-  const employeeShiftSlots = await getEmployeeShiftSlotsForWeek({
+  // Weekly slots are used only for the weekly-hours limit.
+  // A shift belongs to the week in which it starts.
+  const weeklySlots = await getEmployeeShiftSlotsForWeek({
     employeeId,
     weekStartDate: slot.period.startDate,
     weekEndDate: slot.period.endDate,
   });
 
-  const validationErrors = validateAssignment(slot, employeeShiftSlots);
+  // Nearby slots include assignments from neighboring schedule periods.
+  // They are needed for overlap and minimum-rest validation.
+  const nearbySlots = await getEmployeeShiftSlotsAroundShift({
+    employeeId,
+    shiftStart: slot.startTime,
+    shiftEnd: slot.endTime,
+  });
+
+  const validationErrors = validateAssignment(slot, nearbySlots, weeklySlots);
 
   if (validationErrors.length > 0) {
     return {
       ok: false,
       errors: validationErrors,
-    } as const;
+    };
   }
 
   const assigned = await updateShiftSlotEmployee({
@@ -92,11 +108,15 @@ export async function assignEmployeeToShiftSlot({
     employeeId,
   });
 
+  if (!assigned.employeeId) {
+    throw new Error("Assignment update returned no employee id.");
+  }
+
   return {
     ok: true,
     assigned: {
       slotId: assigned.id as UUID,
       employeeId: assigned.employeeId as UUID,
     },
-  } as const;
+  };
 }

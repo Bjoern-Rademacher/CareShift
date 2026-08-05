@@ -1,0 +1,488 @@
+import "dotenv/config";
+
+import { prisma } from "@/lib/db/prisma";
+
+import type { Prisma } from "@/generated/prisma/client";
+
+const employees: Prisma.EmployeeCreateManyInput[] = [
+  // ER
+  {
+    firstName: "Anna",
+    lastName: "Keller",
+    position: "HEAD_DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Daniel",
+    lastName: "Bauer",
+    position: "DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Laura",
+    lastName: "Schmitt",
+    position: "DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Jonas",
+    lastName: "Hoffmann",
+    position: "DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Miriam",
+    lastName: "Wolf",
+    position: "DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Felix",
+    lastName: "Krause",
+    position: "DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Sophie",
+    lastName: "Neumann",
+    position: "DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Tobias",
+    lastName: "Hartmann",
+    position: "DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Nina",
+    lastName: "Vogel",
+    position: "DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+
+  {
+    firstName: "Lea",
+    lastName: "Becker",
+    position: "NURSE",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Paul",
+    lastName: "Wagner",
+    position: "NURSE",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Marie",
+    lastName: "Schulz",
+    position: "NURSE",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Lukas",
+    lastName: "Richter",
+    position: "NURSE",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Sarah",
+    lastName: "Koch",
+    position: "NURSE",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Jan",
+    lastName: "Zimmermann",
+    position: "NURSE",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Julia",
+    lastName: "Krüger",
+    position: "NURSE",
+    departments: ["ER", "ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "David",
+    lastName: "Werner",
+    position: "NURSE",
+    departments: ["ER", "ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Lisa",
+    lastName: "Braun",
+    position: "NURSE",
+    departments: ["ER", "SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Kevin",
+    lastName: "Frank",
+    position: "NURSE",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Emma",
+    lastName: "Berger",
+    position: "NURSE",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+
+  // ICU
+  {
+    firstName: "Martin",
+    lastName: "Fischer",
+    position: "HEAD_DOCTOR",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Katharina",
+    lastName: "Weber",
+    position: "DOCTOR",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Markus",
+    lastName: "Meyer",
+    position: "DOCTOR",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Elena",
+    lastName: "Schneider",
+    position: "DOCTOR",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Christian",
+    lastName: "Lang",
+    position: "DOCTOR",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Johanna",
+    lastName: "Peters",
+    position: "DOCTOR",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+
+  {
+    firstName: "Simon",
+    lastName: "Lorenz",
+    position: "NURSE",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Hannah",
+    lastName: "König",
+    position: "NURSE",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Florian",
+    lastName: "Maier",
+    position: "NURSE",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Amelie",
+    lastName: "Huber",
+    position: "NURSE",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Max",
+    lastName: "Schwarz",
+    position: "NURSE",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Clara",
+    lastName: "Seidel",
+    position: "NURSE",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Tim",
+    lastName: "Brandt",
+    position: "NURSE",
+    departments: ["ICU", "ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Lena",
+    lastName: "Jung",
+    position: "NURSE",
+    departments: ["ICU", "ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Robert",
+    lastName: "Otto",
+    position: "NURSE",
+    departments: ["ICU", "SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Maja",
+    lastName: "Busch",
+    position: "NURSE",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+
+  // Surgery
+  {
+    firstName: "Stefan",
+    lastName: "Roth",
+    position: "HEAD_DOCTOR",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Carolin",
+    lastName: "Graf",
+    position: "SURGEON",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Alexander",
+    lastName: "Sommer",
+    position: "SURGEON",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Isabel",
+    lastName: "Winter",
+    position: "SURGEON",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Henrik",
+    lastName: "Voigt",
+    position: "SURGEON",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Theresa",
+    lastName: "Kranz",
+    position: "SURGEON",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Oliver",
+    lastName: "Kuhn",
+    position: "SURGEON",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+
+  {
+    firstName: "Franziska",
+    lastName: "Böhm",
+    position: "NURSE",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Sebastian",
+    lastName: "Horn",
+    position: "NURSE",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Alina",
+    lastName: "Fuchs",
+    position: "NURSE",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Nico",
+    lastName: "Arnold",
+    position: "NURSE",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Vanessa",
+    lastName: "Klein",
+    position: "NURSE",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Patrick",
+    lastName: "Simon",
+    position: "NURSE",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Melanie",
+    lastName: "Ludwig",
+    position: "NURSE",
+    departments: ["SURGERY", "ER"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Dennis",
+    lastName: "Sauer",
+    position: "NURSE",
+    departments: ["SURGERY", "ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Luisa",
+    lastName: "Schuster",
+    position: "NURSE",
+    departments: ["SURGERY"],
+    status: "ACTIVE",
+  },
+
+  // Radiology
+  {
+    firstName: "Monika",
+    lastName: "Reiter",
+    position: "HEAD_DOCTOR",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Andreas",
+    lastName: "Jäger",
+    position: "DOCTOR",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Verena",
+    lastName: "Kramer",
+    position: "DOCTOR",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Michael",
+    lastName: "Engel",
+    position: "DOCTOR",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+
+  {
+    firstName: "Celine",
+    lastName: "Walter",
+    position: "MEDICAL_ASSISTANT",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Bastian",
+    lastName: "Dietrich",
+    position: "MEDICAL_ASSISTANT",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Frida",
+    lastName: "Scholz",
+    position: "MEDICAL_ASSISTANT",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Moritz",
+    lastName: "Beck",
+    position: "MEDICAL_ASSISTANT",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Greta",
+    lastName: "Haas",
+    position: "MEDICAL_ASSISTANT",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Leon",
+    lastName: "Heinrich",
+    position: "MEDICAL_ASSISTANT",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Paula",
+    lastName: "Möller",
+    position: "MEDICAL_ASSISTANT",
+    departments: ["RADIOLOGY"],
+    status: "ACTIVE",
+  },
+
+  // Disabled test employee
+  {
+    firstName: "Erik",
+    lastName: "Albrecht",
+    position: "NURSE",
+    departments: ["ER", "ICU"],
+    status: "DISABLED",
+  },
+];
+
+async function main() {
+  await prisma.employee.deleteMany();
+
+  await prisma.employee.createMany({
+    data: employees,
+  });
+
+  console.log(`Seeded ${employees.length} employees.`);
+}
+
+main()
+  .catch((error) => {
+    console.error("Employee seed failed:", error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

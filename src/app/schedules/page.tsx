@@ -4,7 +4,7 @@ import * as ui from "@/ui/classes";
 
 import { getPublishedSchedulePeriods } from "@/lib/db/schedulePeriods";
 
-import { formatDateOnly } from "@/lib/functions/verifyDate";
+import { formatDateOnly } from "@/lib/functions/dateTimeUtils";
 import { getDepartmentLabel } from "@/lib/functions/departments";
 
 export default async function SchedulesPage() {

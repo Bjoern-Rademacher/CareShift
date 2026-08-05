@@ -23,6 +23,7 @@ export interface ShiftSlot {
   employeeId: UUID | null;
   department: Departments;
   position: EmployeePosition;
+  slotNumber: number;
   startTime: ISODateString;
   endTime: ISODateString;
 }
@@ -46,7 +47,9 @@ export interface SchedulePeriod {
 
 export type PublishValidationErrorCode =
   | "MISSING_ASSIGNMENT"
-  | "DOUBLE_ASSIGNMENT";
+  | "DOUBLE_ASSIGNMENT"
+  | "INSUFFICIENT_REST"
+  | "WEEKLY_HOURS_EXCEEDED";
 
 export type PublishValidationError = {
   code: PublishValidationErrorCode;

@@ -1,7 +1,7 @@
 import type { Weekday } from "@/types/common";
 import type { TemplateRule } from "@/types/scheduling";
 import type { CreateShiftSlotInput } from "@/types/db_types";
-import { getWeekdayDate, createShiftDateTime } from "./verifyDate";
+import { getWeekdayDate, createShiftDateTime } from "./dateTimeUtils";
 
 type GenerateShiftSlotsInput = {
   scheduleStartDate: Date;
@@ -37,6 +37,7 @@ export default function generateShiftSlots({
         generatedSlots.push({
           department: rule.department,
           position: rule.position,
+          slotNumber: i + 1,
           startTime: createShiftDateTime(currentDay, rule.startTimeLocal),
           endTime: createShiftDateTime(currentDay, rule.endTimeLocal),
         });

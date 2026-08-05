@@ -39,51 +39,58 @@ enum Weekday {
 }
 
 model Employee {
-  id        String      @id @default(cuid())
-  firstName String
-  lastName  String
-  position  Position
-  departments Department[] 
-  status     EmployeeStatus @default(ACTIVE)
+  id          String         @id @default(uuid()) @db.Uuid
+  firstName   String
+  lastName    String
+  position    Position
+  departments Department[]
+  status      EmployeeStatus @default(ACTIVE)
 
   shiftSlots ShiftSlot[]
 }
 
 model SchedulePeriod {
-  id         String      @id @default(cuid())
+  id         String     @id @default(uuid()) @db.Uuid
   department Department
-
-  startDate DateTime
-  endDate   DateTime
-
-  published Boolean @default(false)
+  startDate  DateTime
+  endDate    DateTime
+  published  Boolean    @default(false)
 
   shiftSlots ShiftSlot[]
+
+  @@unique([department, startDate])
 }
 
 model ShiftSlot {
-  id String @id @default(cuid())
+  id String @id @default(uuid()) @db.Uuid
 
-  periodId String
-  period   SchedulePeriod @relation(fields: [periodId], references: [id])
+  periodId String         @db.Uuid
+  period   SchedulePeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
-  employeeId String?
-  employee   Employee? @relation(fields: [employeeId], references: [id])
+  employeeId String?   @db.Uuid
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 
   department Department
   position   Position
+  slotNumber Int
 
   startTime DateTime
   endTime   DateTime
+
+  @@index([periodId])
+  @@index([employeeId])
+  @@index([startTime])
 }
 
 model TemplateRule {
-  id             String     @id @default(cuid())
-  department     Department
-  position       Position
-  weekdays       Weekday[]
+  id         String     @id @default(uuid()) @db.Uuid
+  department Department
+  position   Position
+  weekdays   Weekday[]
+
   startTimeLocal String
   endTimeLocal   String
-  slots          Int
-  active         Boolean    @default(true)
+
+  slots  Int
+  active Boolean @default(true)
 }

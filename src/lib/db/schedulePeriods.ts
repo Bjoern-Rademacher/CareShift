@@ -92,6 +92,7 @@ export async function createSchedulePeriodFromTemplate(input: {
         periodId: period.id,
         department: slot.department,
         position: slot.position,
+        slotNumber: slot.slotNumber,
         startTime: slot.startTime,
         endTime: slot.endTime,
       })),

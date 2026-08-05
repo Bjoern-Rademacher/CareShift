@@ -1,6 +1,6 @@
 import type { ShiftSlot } from "@/types/scheduling";
 import { employeeIds, periodIds } from "./id_s";
-import { createISODateString } from "@/lib/functions/verifyDate";
+import { createISODateString } from "@/lib/functions/dateTimeUtils";
 
 const iso = createISODateString;
 

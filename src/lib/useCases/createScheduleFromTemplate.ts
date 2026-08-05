@@ -1,5 +1,5 @@
 import generateShiftSlots from "@/lib/functions/generateShiftSlots";
-import { getMonday, getWeekdayDate } from "@/lib/functions/verifyDate";
+import { getMonday, getWeekdayDate } from "@/lib/functions/dateTimeUtils";
 import {
   createSchedulePeriodFromTemplate,
   getSchedulePeriodByDepartmentAndStartDate,

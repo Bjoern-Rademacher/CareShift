@@ -5,7 +5,7 @@ import * as ui from "@/ui/classes";
 import {
   ValidationErrors,
   SystemErrors,
-} from "@/app/admin/schedules/[id]/ErrorComponents";
+} from "@/app/admin/schedules/[id]/components/ErrorComponents";
 
 import type { UUID } from "@/types/common";
 import type { AssignableEmployee } from "@/types/employee";

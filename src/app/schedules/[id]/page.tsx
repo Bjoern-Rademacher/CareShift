@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 
 import * as ui from "@/ui/classes";
 
-import SlotsTable from "@/app/admin/schedules/[id]/SlotsTable";
+import SlotsTable from "@/app/admin/schedules/[id]/components/SlotsTable";
 
 import { getSchedulePeriodById } from "@/lib/db/schedulePeriods";
 import { getAssignableEmployees } from "@/lib/db/employees";
-import { formatDateOnly } from "@/lib/functions/verifyDate";
+import { formatDateOnly } from "@/lib/functions/dateTimeUtils";
 import { toUiShiftSlots } from "@/lib/db/mappers";
 
 export default async function ScheduleDetailPage({

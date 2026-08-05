@@ -12,6 +12,12 @@ type GetEmployeeShiftSlotsForWeekInput = {
   weekEndDate: Date;
 };
 
+type GetEmployeeShiftSlotsAroundShiftInput = {
+  employeeId: string;
+  shiftStart: Date;
+  shiftEnd: Date;
+};
+
 export async function getShiftSlotById(id: string) {
   return prisma.shiftSlot.findUnique({
     where: {
@@ -73,13 +79,57 @@ export async function getEmployeeShiftSlotsForWeek({
     where: {
       employeeId,
 
-      // Include every shift that overlaps the weekly period:
-      // [weekStartDate, weekEndDate)
+      // Weekly-hour validation counts every shift in the week
+      // where the shift starts. Overnight shifts therefore belong
+      // to exactly one schedule period and are never counted twice.
+
       startTime: {
+        gte: weekStartDate,
         lt: weekEndDate,
       },
+    },
+    orderBy: {
+      startTime: "asc",
+    },
+    select: {
+      id: true,
+      periodId: true,
+      employeeId: true,
+      department: true,
+      position: true,
+      startTime: true,
+      endTime: true,
+    },
+  });
+}
+
+import { MINIMUM_REST_HOURS } from "@/lib/validation/sharedRules";
+
+export async function getEmployeeShiftSlotsAroundShift({
+  employeeId,
+  shiftStart,
+  shiftEnd,
+}: GetEmployeeShiftSlotsAroundShiftInput) {
+  const minimumRestMs = MINIMUM_REST_HOURS * 60 * 60 * 1000;
+
+  const rangeStart = new Date(shiftStart.getTime() - minimumRestMs);
+
+  const rangeEnd = new Date(shiftEnd.getTime() + minimumRestMs);
+
+  return prisma.shiftSlot.findMany({
+    where: {
+      employeeId,
+
+      // Rest-time and overlap validation must also consider
+      // assignments from the previous and next schedule periods.
+      // Therefore every shift intersecting the surrounding time
+      // window is loaded instead of only the current week.
+
+      startTime: {
+        lt: rangeEnd,
+      },
       endTime: {
-        gt: weekStartDate,
+        gt: rangeStart,
       },
     },
     orderBy: {
