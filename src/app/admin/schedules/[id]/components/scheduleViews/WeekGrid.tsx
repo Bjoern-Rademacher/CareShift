@@ -1,20 +1,17 @@
 import * as ui from "@/ui/classes";
 import * as util from "@/ui/utilities";
 
-import {
-  createWeekGridRows,
-  WEEKDAYS,
-} from "@/app/admin/schedules/[id]/helpers/weekGrid";
+import { createWeekGridRows } from "@/app/admin/schedules/[id]/helpers/weekGrid";
 
 import { formatTimeOnly } from "@/lib/functions/dateTimeUtils";
+
+import { WEEKDAYS } from "@/lib/constants/schedule";
 
 import type { AssignableEmployee } from "@/types/employee";
 import type { ShiftSlot } from "@/types/scheduling";
 import type { UUID, Weekday } from "@/types/common";
-import type {
-  ShiftGroup,
-  WeekGridRow,
-} from "@/app/admin/schedules/[id]/helpers/weekGrid";
+import { ShiftGroup } from "@/types/view";
+import type { WeekGridRow } from "@/app/admin/schedules/[id]/helpers/weekGrid";
 
 type Props = {
   shiftSlots: ShiftSlot[];

@@ -29,6 +29,7 @@ export async function getShiftSlotById(id: string) {
       employeeId: true,
       department: true,
       position: true,
+      slotNumber: true,
       startTime: true,
       endTime: true,
       period: {
@@ -144,5 +145,47 @@ export async function getEmployeeShiftSlotsAroundShift({
       startTime: true,
       endTime: true,
     },
+  });
+}
+
+export async function getEmployeeAssignmentsInRange({
+  employeeIds,
+  rangeStart,
+  rangeEnd,
+}: {
+  employeeIds: string[];
+  rangeStart: Date;
+  rangeEnd: Date;
+}) {
+  return prisma.shiftSlot.findMany({
+    where: {
+      employeeId: {
+        in: employeeIds,
+      },
+      startTime: {
+        lt: rangeEnd,
+      },
+      endTime: {
+        gt: rangeStart,
+      },
+    },
+    select: {
+      id: true,
+      periodId: true,
+      employeeId: true,
+      department: true,
+      position: true,
+      slotNumber: true,
+      startTime: true,
+      endTime: true,
+    },
+    orderBy: [
+      {
+        employeeId: "asc",
+      },
+      {
+        startTime: "asc",
+      },
+    ],
   });
 }

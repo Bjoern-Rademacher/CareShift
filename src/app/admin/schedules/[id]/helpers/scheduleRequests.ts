@@ -4,6 +4,7 @@ import type {
   PublishValidationError,
   SchedulePeriod,
 } from "@/types/scheduling";
+import type { EmployeeAssignmentCandidate } from "@/types/assignment";
 
 export type AssignEmployeeResponse =
   | {
@@ -81,4 +82,23 @@ export async function scheduleActionRequest(
   }
 
   return data;
+}
+
+export async function getAssignmentCandidatesRequest(
+  slotId: UUID,
+): Promise<EmployeeAssignmentCandidate[]> {
+  const response = await fetch(
+    `/api/shift-slots/${slotId}/assignment-candidates`,
+    {
+      method: "GET",
+    },
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error ?? "Could not load assignment candidates.");
+  }
+
+  return data.candidates;
 }

@@ -34,6 +34,7 @@ export type DbShiftSlot = {
   employeeId: string | null;
   department: Departments;
   position: EmployeePosition;
+  slotNumber: number;
   startTime: Date;
   endTime: Date;
 };

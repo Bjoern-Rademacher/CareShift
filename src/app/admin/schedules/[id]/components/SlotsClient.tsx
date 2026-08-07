@@ -1,36 +1,44 @@
 "use client";
 
+// React / Next
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+// UI
 import * as ui from "@/ui/classes";
 
 import AssignModal from "@/app/admin/schedules/[id]/components/AssignModal";
-import Timeline from "@/app/admin/schedules/[id]/components/scheduleViews/Timeline";
-import WeekGrid from "@/app/admin/schedules/[id]/components/scheduleViews/WeekGrid";
-import EmployeeView from "./scheduleViews/Employee";
-
-import ScheduleViewControls, {
-  type ScheduleView,
-} from "@/app/admin/schedules/[id]/components/scheduleViews/ScheduleViewControls";
-
 import {
   ValidationErrors,
   SystemErrors,
 } from "@/app/admin/schedules/[id]/components/ErrorComponents";
 
+import Timeline from "@/app/admin/schedules/[id]/components/scheduleViews/Timeline";
+import WeekGrid from "@/app/admin/schedules/[id]/components/scheduleViews/WeekGrid";
+import EmployeeView from "@/app/admin/schedules/[id]/components/scheduleViews/Employee";
+import ScheduleControls from "@/app/admin/schedules/[id]/components/scheduleViews/ScheduleControls";
+
+// Client requests
 import {
   assignEmployeeRequest,
+  getAssignmentCandidatesRequest,
   scheduleActionRequest,
 } from "@/app/admin/schedules/[id]/helpers/scheduleRequests";
 
+// Helpers / constants
+import { filterSchedule } from "@/app/admin/schedules/[id]/helpers/filterSchedule";
+import { SHIFT_GROUPS, WEEKDAYS } from "@/lib/constants/schedule";
+
+// Types
+import type { UUID } from "@/types/common";
+import type { AssignableEmployee } from "@/types/employee";
+import type { EmployeeAssignmentCandidate } from "@/types/assignment";
 import type {
   AssignmentValidationError,
   PublishValidationError,
   ShiftSlot,
 } from "@/types/scheduling";
-import type { AssignableEmployee } from "@/types/employee";
-import type { UUID } from "@/types/common";
+import type { ScheduleFilters, ScheduleView } from "@/types/view";
 
 type Props = {
   periodId: UUID;
@@ -49,10 +57,20 @@ export default function SlotsClient({
 }: Props) {
   const router = useRouter();
 
+  // Assignment modal
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedSlotId, setSelectedSlotId] = useState<UUID | null>(null);
-  const [isSavingAssign, setIsSavingAssign] = useState(false);
 
+  const [assignmentCandidates, setAssignmentCandidates] = useState<
+    EmployeeAssignmentCandidate[]
+  >([]);
+  const [isLoadingCandidates, setIsLoadingCandidates] = useState(false);
+  const [candidateLoadError, setCandidateLoadError] = useState<string | null>(
+    null,
+  );
+
+  // Assignment request
+  const [isSavingAssign, setIsSavingAssign] = useState(false);
   const [assignmentValidationErrors, setAssignmentValidationErrors] = useState<
     AssignmentValidationError[]
   >([]);
@@ -60,6 +78,7 @@ export default function SlotsClient({
     null,
   );
 
+  // Schedule validation / publishing
   const [scheduleValidationErrors, setScheduleValidationErrors] = useState<
     PublishValidationError[]
   >([]);
@@ -67,39 +86,61 @@ export default function SlotsClient({
     null,
   );
   const [validationSuccess, setValidationSuccess] = useState(false);
-
   const [isValidating, setIsValidating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // Schedule view / filtering
   const [activeView, setActiveView] = useState<ScheduleView>("TIMELINE");
 
-  const selectedSlot = shiftSlots.find((slot) => slot.id === selectedSlotId);
+  const [filters, setFilters] = useState<ScheduleFilters>({
+    weekdays: [...WEEKDAYS],
+    shiftGroups: [...SHIFT_GROUPS],
+    assignment: "ALL",
+  });
 
-  const eligibleEmployees = selectedSlot
-    ? employees.filter(
-        (employee) =>
-          employee.departments.includes(selectedSlot.department) &&
-          employee.position === selectedSlot.position,
-      )
-    : [];
+  const filteredShiftSlots = filterSchedule(shiftSlots, filters);
 
   const isScheduleActionRunning = isValidating || isPublishing;
 
   function handleCloseAssignModal() {
     setIsAssignModalOpen(false);
     setSelectedSlotId(null);
+
+    setAssignmentCandidates([]);
+    setIsLoadingCandidates(false);
+    setCandidateLoadError(null);
+
     setAssignmentValidationErrors([]);
     setAssignSystemError(null);
     setIsSavingAssign(false);
   }
 
-  function handleAssignClick(slotId: UUID) {
+  // Open immediately, then load fresh cross-period assignment information.
+  async function handleOpenAssignModal(slotId: UUID) {
     if (!canAssign) return;
 
-    setAssignmentValidationErrors([]);
-    setAssignSystemError(null);
     setSelectedSlotId(slotId);
     setIsAssignModalOpen(true);
+
+    setAssignmentCandidates([]);
+    setCandidateLoadError(null);
+    setAssignmentValidationErrors([]);
+    setAssignSystemError(null);
+    setIsLoadingCandidates(true);
+
+    try {
+      const candidates = await getAssignmentCandidatesRequest(slotId);
+
+      setAssignmentCandidates(candidates);
+    } catch (error) {
+      setCandidateLoadError(
+        error instanceof Error
+          ? error.message
+          : "Could not load assignment candidates.",
+      );
+    } finally {
+      setIsLoadingCandidates(false);
+    }
   }
 
   async function handleAssignConfirm(employeeId: UUID) {
@@ -179,35 +220,37 @@ export default function SlotsClient({
 
   return (
     <section>
-      <ScheduleViewControls
+      <ScheduleControls
         activeView={activeView}
+        filters={filters}
         onViewChange={setActiveView}
+        onFiltersChange={setFilters}
       />
 
       {activeView === "TIMELINE" && (
         <Timeline
-          shiftSlots={shiftSlots}
+          shiftSlots={filteredShiftSlots}
           employees={employees}
           canAssign={canAssign}
-          onAssignClick={handleAssignClick}
+          onAssignClick={handleOpenAssignModal}
         />
       )}
 
       {activeView === "WEEK_GRID" && (
         <WeekGrid
-          shiftSlots={shiftSlots}
+          shiftSlots={filteredShiftSlots}
           employees={employees}
           canAssign={canAssign}
-          onAssignClick={handleAssignClick}
+          onAssignClick={handleOpenAssignModal}
         />
       )}
 
       {activeView === "EMPLOYEES" && (
         <EmployeeView
-          shiftSlots={shiftSlots}
+          shiftSlots={filteredShiftSlots}
           employees={employees}
           canAssign={canAssign}
-          onAssignClick={handleAssignClick}
+          onAssignClick={handleOpenAssignModal}
         />
       )}
 
@@ -263,7 +306,9 @@ export default function SlotsClient({
 
       {isAssignModalOpen && selectedSlotId && (
         <AssignModal
-          employees={eligibleEmployees}
+          candidates={assignmentCandidates}
+          isLoadingCandidates={isLoadingCandidates}
+          candidateLoadError={candidateLoadError}
           onConfirm={handleAssignConfirm}
           onClose={handleCloseAssignModal}
           isSaving={isSavingAssign}

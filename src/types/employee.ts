@@ -44,3 +44,14 @@ export type AuthUser = {
   passwordHash: string;
   accessPermission: AccessPermission;
 };
+
+export const Position = {
+  DOCTOR: "DOCTOR",
+  HEAD_DOCTOR: "HEAD_DOCTOR",
+  SURGEON: "SURGEON",
+  NURSE: "NURSE",
+  INTERN: "INTERN",
+  MEDICAL_ASSISTANT: "MEDICAL_ASSISTANT",
+} as const;
+
+export type Position = (typeof Position)[keyof typeof Position];

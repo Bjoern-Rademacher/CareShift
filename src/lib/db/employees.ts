@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
-import { EmployeeStatus } from "@/generated/prisma/enums";
+import { EmployeeStatus, Department, Position } from "@/generated/prisma/enums";
 
 export async function getEmployeeById(id: string) {
   return prisma.employee.findUnique({
@@ -45,5 +45,31 @@ export async function getDisplayEmployees(status?: EmployeeStatus) {
       position: true,
       status: true,
     },
+  });
+}
+
+export async function getAssignableEmployeesByDepartmentAndPosition({
+  department,
+  position,
+}: {
+  department: Department;
+  position: Position;
+}) {
+  return prisma.employee.findMany({
+    where: {
+      status: "ACTIVE",
+      position,
+      departments: {
+        has: department,
+      },
+    },
+    orderBy: [
+      {
+        lastName: "asc",
+      },
+      {
+        firstName: "asc",
+      },
+    ],
   });
 }

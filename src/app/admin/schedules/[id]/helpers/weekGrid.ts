@@ -1,9 +1,10 @@
 import type { ShiftSlot } from "@/types/scheduling";
 import type { Weekday } from "@/types/common";
+import { ShiftGroup } from "@/types/view";
+
+import { getShiftGroup } from "@/lib/functions/scheduleUtils";
 
 import { getWeekday } from "@/lib/functions/dateTimeUtils";
-
-export type ShiftGroup = "MORNING" | "EVENING" | "NIGHT";
 
 export type WeekGridRow = {
   key: string;
@@ -12,16 +13,6 @@ export type WeekGridRow = {
   slotNumber: number;
   slots: Partial<Record<Weekday, ShiftSlot>>;
 };
-
-export const WEEKDAYS: Weekday[] = [
-  "MON",
-  "TUE",
-  "WED",
-  "THU",
-  "FRI",
-  "SAT",
-  "SUN",
-];
 
 const SHIFT_GROUP_ORDER: Record<ShiftGroup, number> = {
   MORNING: 0,
@@ -37,20 +28,6 @@ const POSITION_ORDER: Record<ShiftSlot["position"], number> = {
   MEDICAL_ASSISTANT: 2,
   INTERN: 3,
 };
-
-function getShiftGroup(startTime: string): ShiftGroup {
-  const hour = new Date(startTime).getUTCHours();
-
-  if (hour >= 6 && hour < 14) {
-    return "MORNING";
-  }
-
-  if (hour >= 14 && hour < 22) {
-    return "EVENING";
-  }
-
-  return "NIGHT";
-}
 
 function createRowKey(slot: ShiftSlot): string {
   return [getShiftGroup(slot.startTime), slot.position, slot.slotNumber].join(

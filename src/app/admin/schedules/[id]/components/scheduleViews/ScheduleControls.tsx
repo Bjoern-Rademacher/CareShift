@@ -1,0 +1,198 @@
+import { SHIFT_GROUPS, WEEKDAYS } from "@/lib/constants/schedule";
+
+import type {
+  AssignmentFilter,
+  ScheduleFilters,
+  ScheduleView,
+  ShiftGroup,
+} from "@/types/view";
+import type { Weekday } from "@/types/common";
+
+type Props = {
+  activeView: ScheduleView;
+  filters: ScheduleFilters;
+  onViewChange: (view: ScheduleView) => void;
+  onFiltersChange: (filters: ScheduleFilters) => void;
+};
+
+const VIEW_OPTIONS: Array<{
+  value: ScheduleView;
+  label: string;
+  icon: string;
+}> = [
+  {
+    value: "TIMELINE",
+    label: "Timeline",
+    icon: "☷",
+  },
+  {
+    value: "WEEK_GRID",
+    label: "Week Grid",
+    icon: "▦",
+  },
+  {
+    value: "EMPLOYEES",
+    label: "Employees",
+    icon: "♙",
+  },
+];
+
+const DAY_OPTIONS: Array<{
+  value: "ALL" | Weekday;
+  label: string;
+}> = [
+  { value: "ALL", label: "All days" },
+  { value: "MON", label: "Monday" },
+  { value: "TUE", label: "Tuesday" },
+  { value: "WED", label: "Wednesday" },
+  { value: "THU", label: "Thursday" },
+  { value: "FRI", label: "Friday" },
+  { value: "SAT", label: "Saturday" },
+  { value: "SUN", label: "Sunday" },
+];
+
+const SHIFT_OPTIONS: Array<{
+  value: "ALL" | ShiftGroup;
+  label: string;
+}> = [
+  { value: "ALL", label: "All shifts" },
+  { value: "MORNING", label: "Morning" },
+  { value: "EVENING", label: "Evening" },
+  { value: "NIGHT", label: "Night" },
+];
+
+const ASSIGNMENT_OPTIONS: Array<{
+  value: AssignmentFilter;
+  label: string;
+}> = [
+  { value: "ALL", label: "All assignments" },
+  { value: "ASSIGNED", label: "Assigned" },
+  { value: "UNASSIGNED", label: "Unassigned" },
+];
+
+const selectClass =
+  "min-w-32 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none transition hover:border-slate-500 focus:border-violet-500";
+
+export default function ScheduleControls({
+  activeView,
+  filters,
+  onViewChange,
+  onFiltersChange,
+}: Props) {
+  const selectedDay =
+    filters.weekdays.length === WEEKDAYS.length ? "ALL" : filters.weekdays[0];
+
+  const selectedShift =
+    filters.shiftGroups.length === SHIFT_GROUPS.length
+      ? "ALL"
+      : filters.shiftGroups[0];
+
+  function handleDayChange(value: "ALL" | Weekday) {
+    onFiltersChange({
+      ...filters,
+      weekdays: value === "ALL" ? [...WEEKDAYS] : [value],
+    });
+  }
+
+  function handleShiftChange(value: "ALL" | ShiftGroup) {
+    onFiltersChange({
+      ...filters,
+      shiftGroups: value === "ALL" ? [...SHIFT_GROUPS] : [value],
+    });
+  }
+
+  function handleAssignmentChange(value: AssignmentFilter) {
+    onFiltersChange({
+      ...filters,
+      assignment: value,
+    });
+  }
+
+  return (
+    <section className="mb-5 rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-4">
+        <nav
+          aria-label="Schedule view"
+          className="inline-flex overflow-hidden rounded-lg border border-slate-700 bg-slate-950"
+        >
+          {VIEW_OPTIONS.map((option) => {
+            const isActive = activeView === option.value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => onViewChange(option.value)}
+                className={
+                  isActive
+                    ? "inline-flex items-center gap-2 bg-violet-600 px-4 py-2 text-sm font-medium text-white"
+                    : "inline-flex items-center gap-2 border-l border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition first:border-l-0 hover:bg-slate-800 hover:text-white"
+                }
+              >
+                <span aria-hidden="true">{option.icon}</span>
+                {option.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          <label>
+            <span className="sr-only">Filter by day</span>
+
+            <select
+              className={selectClass}
+              value={selectedDay}
+              onChange={(event) =>
+                handleDayChange(event.target.value as "ALL" | Weekday)
+              }
+            >
+              {DAY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span className="sr-only">Filter by shift</span>
+
+            <select
+              className={selectClass}
+              value={selectedShift}
+              onChange={(event) =>
+                handleShiftChange(event.target.value as "ALL" | ShiftGroup)
+              }
+            >
+              {SHIFT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span className="sr-only">Filter by assignment status</span>
+
+            <select
+              className={selectClass}
+              value={filters.assignment}
+              onChange={(event) =>
+                handleAssignmentChange(event.target.value as AssignmentFilter)
+              }
+            >
+              {ASSIGNMENT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+  );
+}

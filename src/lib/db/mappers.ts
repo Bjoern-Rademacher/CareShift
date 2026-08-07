@@ -4,6 +4,7 @@ import type {
   SchedulePeriod,
   DbShiftSlot,
 } from "@/types/scheduling";
+import type { AssignmentShift } from "@/types/assignment";
 
 export function toUiShiftSlot(slot: DbShiftSlot): ShiftSlot {
   return {
@@ -12,6 +13,7 @@ export function toUiShiftSlot(slot: DbShiftSlot): ShiftSlot {
     employeeId: slot.employeeId as UUID | null,
     department: slot.department,
     position: slot.position,
+    slotNumber: slot.slotNumber,
     startTime: slot.startTime.toISOString() as ISODateString,
     endTime: slot.endTime.toISOString() as ISODateString,
   };
