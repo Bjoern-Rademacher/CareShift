@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import DevNav from "@/app/dev/DevNav";
+import ThemeProvider from "@/app/theme/ThemeProvider";
 
 import * as ui from "@/ui/classes";
 
@@ -29,14 +30,16 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-gray-950 text-gray-100 antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="min-h-screen px-4 py-6">
-          <div className={ui.appFrame}>
-            {process.env.NODE_ENV === "development" && <DevNav />}
-            {children}
+        <ThemeProvider>
+          <div className="min-h-screen px-4 py-6">
+            <div className={ui.appFrame}>
+              {process.env.NODE_ENV === "development" && <DevNav />}
+              {children}
+            </div>
           </div>
-        </div>
+        </ThemeProvider>
       </body>
     </html>
   );

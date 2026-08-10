@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import ThemeSwitch from "@/app/theme/ThemeSwitch";
+
 import * as ui from "@/ui/classes";
 
 const links = [
@@ -34,6 +37,7 @@ export default function DevNav() {
           );
         })}
       </div>
+      <ThemeSwitch />
     </nav>
   );
 }

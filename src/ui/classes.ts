@@ -3,7 +3,8 @@ export const page = "space-y-6";
 
 // Application shell
 export const appFrame =
-  "mx-auto w-full max-w-[1600px] rounded-2xl border border-gray-800 bg-gray-950/60 shadow-xl";
+  "mx-auto w-full max-w-[1600px] rounded-overlay border border-border " +
+  "bg-surface shadow-card";
 
 // Page widths inside the shell
 export const frameNarrow = "mx-auto w-full max-w-md";
@@ -16,74 +17,133 @@ export const frameWide = "w-full";
 export const section = "space-y-3";
 
 export const card =
-  "bg-gray-900/60 border border-gray-800 rounded-lg p-4 transition " +
-  "hover:border-purple-500/40 hover:bg-gray-900/80";
+  "rounded-card border border-border bg-surface p-4 shadow-card " +
+  "transition-colors duration-fast hover:bg-surface-hover";
 
 // Typography
-export const title = "text-xl font-semibold text-gray-50";
+export const pageTitle = "text-xl font-semibold tracking-tight text-foreground";
 
-export const subtitle = "text-sm text-gray-250";
+export const sectionTitle = "text-base font-semibold text-foreground";
+
+export const cardTitle = "text-sm font-semibold text-foreground";
+
+export const bodyText = "text-sm text-foreground";
+
+export const bodyMuted = "text-sm text-foreground-muted";
+
+export const label = "text-sm font-medium text-foreground";
+
+export const caption = "text-xs text-foreground-subtle";
+
+// Temporary backwards-compatible aliases
+export const title = pageTitle;
+
+export const subtitle = bodyMuted;
 
 // Tables
 export const table = "w-full border-collapse text-sm";
 
 export const th =
-  "border-b border-gray-800 p-2 text-left font-semibold text-gray-300";
+  "border-b border-border p-2 text-left font-semibold text-foreground-muted";
 
-export const td = "border-b border-gray-800 p-2 align-top text-gray-100";
+export const td = "border-b border-border p-2 align-top text-foreground";
 
 export const rowHover =
-  "transition hover:bg-gray-900 hover:outline hover:outline-1 hover:outline-purple-500/20";
+  "transition-colors duration-fast hover:bg-surface-hover";
 
 // Buttons
 export const button =
-  "px-3 py-1.5 rounded border border-gray-700 text-gray-100 transition " +
-  "hover:border-purple-500/60 hover:bg-gray-900 focus:outline-none " +
-  "focus:ring-2 focus:ring-purple-500/40";
+  "rounded-control border border-border bg-surface px-3 py-1.5 " +
+  "text-sm font-medium text-foreground transition-colors duration-fast " +
+  "hover:border-border-strong hover:bg-surface-hover " +
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+  "disabled:border-disabled-border disabled:bg-disabled-surface " +
+  "disabled:text-disabled-foreground";
 
 export const buttonPrimary =
-  "px-3 py-1.5 rounded bg-purple-600 text-white font-medium transition " +
-  "hover:bg-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 " +
-  "disabled:opacity-50";
+  "rounded-control border border-primary bg-primary px-3 py-1.5 " +
+  "text-sm font-medium text-primary-foreground transition-colors duration-fast " +
+  "hover:border-primary-hover hover:bg-primary-hover " +
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+  "disabled:border-disabled-border disabled:bg-disabled-surface " +
+  "disabled:text-disabled-foreground";
 
 export const buttonGhost =
-  "px-3 py-1.5 rounded text-gray-200 transition " +
-  "hover:text-purple-200 hover:bg-gray-900";
+  "rounded-control px-3 py-1.5 text-sm font-medium text-foreground-muted " +
+  "transition-colors duration-fast hover:bg-surface-hover hover:text-foreground " +
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+  "disabled:text-disabled-foreground";
+
+export const segmentedControlButton =
+  "rounded-control px-2.5 py-1 text-xs font-medium " +
+  "transition-colors duration-fast " +
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 // Inputs / selects
 export const input =
-  "w-full rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm " +
-  "text-gray-100 placeholder:text-gray-500 transition " +
-  "focus:outline-none focus:ring-3 focus:ring-white-500/40";
+  "w-full rounded-control border border-border bg-surface px-3 py-2 text-sm " +
+  "text-foreground placeholder:text-foreground-subtle transition-colors duration-fast " +
+  "hover:border-border-strong " +
+  "focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+  "disabled:border-disabled-border disabled:bg-disabled-surface disabled:text-disabled-foreground";
+
+export const inputCompact =
+  "w-auto rounded-control border border-border bg-surface px-3 py-2 text-sm " +
+  "text-foreground placeholder:text-foreground-subtle transition-colors duration-fast " +
+  "hover:border-border-strong " +
+  "focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+  "disabled:border-disabled-border disabled:bg-disabled-surface disabled:text-disabled-foreground";
 
 export const select =
-  "rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm " +
-  "text-gray-100 transition focus:outline-none focus:ring-2 focus:ring-purple-500/40";
+  "rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground " +
+  "transition-colors duration-fast hover:border-border-strong " +
+  "focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+  "disabled:border-disabled-border disabled:bg-disabled-surface disabled:text-disabled-foreground";
 
 // Badges / status chips
 export const badge =
-  "inline-flex items-center rounded-full border border-gray-700 px-2 py-0.5 text-xs";
+  "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium";
 
-export const badgeGray = "bg-gray-900 text-gray-300 border-gray-700";
+export const badgeNeutral =
+  "border-border bg-surface-muted text-foreground-muted";
 
-export const badgeGreen = "bg-green-950/40 text-green-300 border-green-900";
+export const badgeSuccess =
+  "border-success-border bg-success-muted text-success";
 
-export const badgeRed = "bg-red-950/40 text-red-300 border-red-900";
+export const badgeWarning =
+  "border-warning-border bg-warning-muted text-warning";
+
+export const badgeDanger = "border-danger-border bg-danger-muted text-danger";
+
+// Temporary backwards-compatible aliases
+export const badgeGray = badgeNeutral;
+
+export const badgeGreen = badgeSuccess;
+
+export const badgeRed = badgeDanger;
 
 // Modal / overlay
 export const overlay =
-  "fixed inset-0 bg-black/70 flex items-center justify-center";
+  "fixed inset-0 flex items-center justify-center bg-black/60";
 
 export const modal =
-  "w-full max-w-md rounded-xl border border-gray-800 bg-gray-950 p-5 shadow-xl space-y-4";
+  "w-full max-w-md space-y-4 rounded-overlay border border-border " +
+  "bg-surface p-5 shadow-overlay";
 
-export const inputCompact =
-  "w-auto rounded border border-gray-700 bg-gray-950 px-3 py-2 text-sm " +
-  "text-gray-100 placeholder:text-gray-500 transition " +
-  "focus:outline-none focus:ring-2 focus:ring-purple-500/40";
+// Alerts / feedback
+export const alertSuccess =
+  "rounded-card border border-success-border bg-success-muted px-3 py-2 " +
+  "text-sm text-success";
 
-export const successAlert =
-  "mb-4 rounded bg-green-100 text-green-800 px-3 py-2 text-sm";
+export const alertWarning =
+  "rounded-card border border-warning-border bg-warning-muted px-3 py-2 " +
+  "text-sm text-warning";
 
-export const errorAlert =
-  "mb-4 rounded bg-red-100 text-red-800 px-3 py-2 text-sm";
+export const alertDanger =
+  "rounded-card border border-danger-border bg-danger-muted px-3 py-2 " +
+  "text-sm text-danger";
+
+// Temporary backwards-compatible aliases
+export const successAlert = alertSuccess;
+
+export const errorAlert = alertDanger;
