@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/db/prisma";
 import { EmployeeStatus, Department, Position } from "@/generated/prisma/enums";
+import type { UUID } from "@/types/common";
 
-export async function getEmployeeById(id: string) {
+export async function getEmployeeById(employeeId: UUID) {
   return prisma.employee.findUnique({
     where: {
-      id,
+      id: employeeId,
     },
     select: {
       id: true,

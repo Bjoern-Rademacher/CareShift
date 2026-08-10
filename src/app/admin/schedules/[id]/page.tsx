@@ -4,7 +4,6 @@ import { getCurrentUser } from "@/auth/currentUser";
 
 import * as ui from "@/ui/classes";
 
-import ScheduleHeader from "./components/ScheduleHeader";
 import SlotsClient from "./components/SlotsClient";
 
 import {
@@ -42,16 +41,8 @@ export default async function PeriodsDetailPage({
   return (
     <main className={ui.page}>
       <section className={ui.section}>
-        <ScheduleHeader
-          periodId={schedulePeriod.id}
-          department={schedulePeriod.department}
-          startDate={schedulePeriod.startDate}
-          endDate={schedulePeriod.endDate}
-          published={schedulePeriod.published}
-        />
-
         <SlotsClient
-          periodId={schedulePeriod.id}
+          schedulePeriod={schedulePeriod}
           shiftSlots={shiftSlots}
           employees={employees}
           canAssign={canAssign}

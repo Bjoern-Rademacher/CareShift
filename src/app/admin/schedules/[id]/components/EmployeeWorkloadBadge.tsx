@@ -2,9 +2,8 @@ import * as ui from "@/ui/classes";
 
 import { formatTimeOnly, formatWeekday } from "@/lib/functions/dateTimeUtils";
 
-import { AssignmentUnavailableReason } from "@/types/assignment";
-
 import type {
+  AssignmentUnavailableReason,
   EmployeeAssignmentCandidate,
   NeighborShift,
 } from "@/types/assignment";
@@ -15,41 +14,65 @@ type Props = {
   onAssign: () => void;
 };
 
-function formatRestHours(restHours: number): string {
-  return `${Math.round(restHours)} h`;
+function getUnavailableReasonLabel(
+  reason: AssignmentUnavailableReason,
+): string {
+  switch (reason) {
+    case "AT_CAPACITY":
+      return "Weekly hours reached";
+
+    case "OVERLAP":
+      return "Overlapping shift";
+
+    case "INSUFFICIENT_REST":
+      return "Insufficient rest";
+
+    case "ROLLING_7_DAY_LIMIT":
+      return "Exceeds 40h in a 7-day period";
+  }
 }
 
-function renderNeighborShift(label: string, shift: NeighborShift | null) {
-  if (!shift) {
+function formatRestHours(hours: number): string {
+  return `${Math.max(0, Math.round(hours))}h`;
+}
+
+function NeighborRow({
+  label,
+  neighbor,
+}: {
+  label: "Prev" | "Next";
+  neighbor: NeighborShift | null;
+}) {
+  if (!neighbor) {
     return (
-      <div className="flex justify-between text-sm text-slate-400">
-        <span>{label}</span>
-        <span>—</span>
+      <div className="grid grid-cols-[36px_1fr_auto] items-center gap-2 text-xs">
+        <span className="text-slate-500">{label}</span>
+        <span className="text-slate-500">No nearby shift</span>
+        <span />
       </div>
     );
   }
 
-  const icon = shift.hasEnoughRest ? "✓" : "⚠";
+  const shift = neighbor.shiftSlot;
 
-  const colorClass = shift.hasEnoughRest
+  const statusClass = neighbor.hasEnoughRest
     ? "text-emerald-400"
     : "text-amber-400";
 
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-slate-400">{label}</span>
+    <div className="grid grid-cols-[36px_1fr_auto] items-center gap-2 text-xs">
+      <span className="text-slate-500">{label}</span>
 
-      <div className="flex items-center gap-3">
-        <span className="text-slate-200">
-          {formatWeekday(new Date(shift.shiftSlot.startTime))}{" "}
-          {formatTimeOnly(new Date(shift.shiftSlot.startTime))}–
-          {formatTimeOnly(new Date(shift.shiftSlot.endTime))}
-        </span>
+      <span className="whitespace-nowrap text-slate-300">
+        {formatWeekday(new Date(shift.startTime))}{" "}
+        {formatTimeOnly(new Date(shift.startTime))}–
+        {formatTimeOnly(new Date(shift.endTime))}
+      </span>
 
-        <span className={colorClass}>
-          {icon} {formatRestHours(shift.restHours)}
-        </span>
-      </div>
+      <span className={`whitespace-nowrap ${statusClass}`}>
+        {neighbor.hasEnoughRest ? "✓" : "⚠"}{" "}
+        {formatRestHours(neighbor.restHours)}
+      </span>
     </div>
   );
 }
@@ -73,85 +96,67 @@ export default function EmployeeWorkloadBadge({
     100,
   );
 
-  function getUnavailableReasonLabel(
-    reason: AssignmentUnavailableReason,
-  ): string {
-    switch (reason) {
-      case "AT_CAPACITY":
-        return "Weekly hours reached";
-
-      case "OVERLAP":
-        return "Shift overlaps";
-
-      case "INSUFFICIENT_REST":
-        return "Insufficient rest";
-    }
-  }
-
   return (
-    <article className="rounded-xl border border-slate-700 bg-slate-900 p-4">
-      <div className="flex items-start justify-between gap-6">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-slate-100">
-            {employee.firstName} {employee.lastName}
-          </h3>
+    <article className="grid grid-cols-[1.05fr_1fr_1.6fr_auto] items-center gap-5 rounded-lg border border-slate-700 bg-slate-900/70 px-4 py-3">
+      {/* Employee */}
+      <div className="min-w-0">
+        <p className="truncate font-semibold text-slate-100">
+          {employee.firstName} {employee.lastName}
+        </p>
 
-          <p className="mt-1 text-sm text-slate-400">
-            {employee.position} • {employee.departments.join(", ")}
-          </p>
+        <p className="mt-0.5 truncate text-xs text-slate-400">
+          {employee.position} • {employee.departments.join(", ")}
+        </p>
+      </div>
 
-          <div className="mt-4">
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="text-slate-200">
-                {workload.assignedHours} / {workload.targetHours} h
-              </span>
-            </div>
+      {/* Workload */}
+      <div className="min-w-0">
+        <p className="text-sm text-slate-200">
+          {workload.assignedHours} / {workload.targetHours} h
+        </p>
 
-            <div className="h-1.5 overflow-hidden rounded-full bg-slate-800">
-              <div
-                className="h-full rounded-full bg-violet-500 transition-all"
-                style={{
-                  width: `${workloadPercentage}%`,
-                }}
-              />
-            </div>
-
-            <div className="mt-2 flex gap-4 text-xs text-slate-400">
-              <span>{workload.shiftCount} shifts</span>
-
-              <span>🌙 {workload.nightShiftCount}</span>
-
-              <span>🏖 {workload.weekendShiftCount}</span>
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-2 border-t border-slate-800 pt-3">
-            {renderNeighborShift("Prev", previousShift)}
-
-            {renderNeighborShift("Next", nextShift)}
-          </div>
+        <div className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-slate-800">
+          <div
+            className="h-full rounded-full bg-slate-500"
+            style={{
+              width: `${workloadPercentage}%`,
+            }}
+          />
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <button
-            type="button"
-            disabled={isSaving || !candidate.assignable}
-            className={
-              isSaving || !candidate.assignable
-                ? "cursor-not-allowed rounded-md bg-slate-800 px-4 py-2 text-slate-500"
-                : ui.buttonPrimary
-            }
-            onClick={onAssign}
-          >
-            {isSaving ? "Assigning..." : "Assign"}
-          </button>
+        <p className="mt-1.5 whitespace-nowrap text-xs text-slate-500">
+          {workload.shiftCount} shifts
+          <span className="mx-2">•</span>☾ {workload.nightShiftCount}
+          <span className="mx-2">•</span>◇ {workload.weekendShiftCount}
+        </p>
+      </div>
 
-          {!assignable && unavailableReason && (
-            <p className="max-w-28 text-right text-xs text-amber-400">
-              {getUnavailableReasonLabel(unavailableReason)}
-            </p>
-          )}
-        </div>
+      {/* Neighboring shifts */}
+      <div className="space-y-1.5 border-l border-slate-800 pl-5">
+        <NeighborRow label="Prev" neighbor={previousShift} />
+        <NeighborRow label="Next" neighbor={nextShift} />
+      </div>
+
+      {/* Action */}
+      <div className="flex min-w-28 flex-col items-end gap-1.5">
+        <button
+          type="button"
+          className={
+            assignable && !isSaving
+              ? ui.buttonPrimary
+              : "cursor-not-allowed rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-500"
+          }
+          disabled={!assignable || isSaving}
+          onClick={onAssign}
+        >
+          {isSaving ? "Saving..." : "Assign"}
+        </button>
+
+        {!assignable && unavailableReason && (
+          <span className="whitespace-nowrap text-xs text-amber-400">
+            {getUnavailableReasonLabel(unavailableReason)}
+          </span>
+        )}
       </div>
     </article>
   );

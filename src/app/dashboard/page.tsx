@@ -31,8 +31,8 @@ const dashboardLinks = [
 
 export default function DashboardPage() {
   return (
-    <main className={ui.page}>
-      <section className={`${ui.card}${ui.section}`}>
+    <main className={`${ui.page} ${ui.frameDefault} px-4 py-6`}>
+      <section className={`${ui.card} ${ui.section}`}>
         <h1 className={ui.title}>Admin Dashboard</h1>
 
         <p className={ui.subtitle}>
@@ -44,13 +44,17 @@ export default function DashboardPage() {
             item.disabled ? (
               <article key={item.title} className={`${ui.card} opacity-50`}>
                 <h2 className="text-xl font-semibold">{item.title}</h2>
+
                 <p className={ui.subtitle}>{item.description}</p>
+
                 <p className="mt-4 text-sm">Coming soon</p>
               </article>
             ) : (
               <Link key={item.title} href={item.href} className={ui.card}>
                 <h2 className="text-xl font-semibold">{item.title}</h2>
+
                 <p className={ui.subtitle}>{item.description}</p>
+
                 <p className="mt-4 font-medium">Open →</p>
               </Link>
             ),

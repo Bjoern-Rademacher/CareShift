@@ -29,9 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-950 text-gray-100`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-gray-950 text-gray-100 antialiased`}
       >
-        <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="min-h-screen px-4 py-6">
           <div className={ui.appFrame}>
             {process.env.NODE_ENV === "development" && <DevNav />}
             {children}

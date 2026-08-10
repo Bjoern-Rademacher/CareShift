@@ -33,19 +33,27 @@ export default function generateShiftSlots({
         weekdayOffsets[weekday],
       );
 
+      const startTime = createShiftDateTime(currentDay, rule.startTimeLocal);
+
+      const endTime = createShiftDateTime(currentDay, rule.endTimeLocal);
+
+      // Make sure cross-midnight shifts have the correct end date.
+
+      if (endTime.getTime() < startTime.getTime()) {
+        endTime.setUTCDate(endTime.getUTCDate() + 1);
+      }
+
       for (let i = 0; i < rule.slots; i++) {
         generatedSlots.push({
           department: rule.department,
           position: rule.position,
           slotNumber: i + 1,
-          startTime: createShiftDateTime(currentDay, rule.startTimeLocal),
-          endTime: createShiftDateTime(currentDay, rule.endTimeLocal),
+          startTime,
+          endTime,
         });
       }
     }
   }
-
-  generatedSlots.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
   return generatedSlots;
 }

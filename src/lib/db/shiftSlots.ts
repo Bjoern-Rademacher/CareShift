@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db/prisma";
 import { UUID } from "@/types/common";
 
+import type { AssignmentShift } from "@/types/assignment";
+
 type AssignEmployeeToShiftSlotInput = {
   slotId: UUID;
   employeeId: UUID;
@@ -187,5 +189,56 @@ export async function getEmployeeAssignmentsInRange({
         startTime: "asc",
       },
     ],
+  });
+}
+
+export async function getShiftSlotsByPeriodId(
+  periodId: UUID,
+): Promise<AssignmentShift[]> {
+  return prisma.shiftSlot.findMany({
+    where: {
+      periodId,
+    },
+    select: {
+      id: true,
+      periodId: true,
+      employeeId: true,
+      department: true,
+      position: true,
+      slotNumber: true,
+      startTime: true,
+      endTime: true,
+    },
+    orderBy: {
+      startTime: "asc",
+    },
+  });
+}
+
+export async function getShiftSlotsByIds(slotIds: UUID[]) {
+  return prisma.shiftSlot.findMany({
+    where: {
+      id: {
+        in: slotIds,
+      },
+    },
+    select: {
+      id: true,
+      periodId: true,
+      employeeId: true,
+      department: true,
+      position: true,
+      slotNumber: true,
+      startTime: true,
+      endTime: true,
+      period: {
+        select: {
+          published: true,
+        },
+      },
+    },
+    orderBy: {
+      startTime: "asc",
+    },
   });
 }

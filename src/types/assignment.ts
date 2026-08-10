@@ -8,6 +8,7 @@ import type { Position } from "@/types/employee";
 
 export type AssignmentUnavailableReason =
   | "AT_CAPACITY"
+  | "ROLLING_7_DAY_LIMIT"
   | "OVERLAP"
   | "INSUFFICIENT_REST";
 

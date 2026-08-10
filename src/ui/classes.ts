@@ -1,8 +1,16 @@
-// Layout / page framing
+// Page spacing
 export const page = "space-y-6";
 
+// Application shell
 export const appFrame =
-  "w-full max-w-5xl rounded-2xl border border-gray-800 bg-gray-950/60 shadow-xl";
+  "mx-auto w-full max-w-[1600px] rounded-2xl border border-gray-800 bg-gray-950/60 shadow-xl";
+
+// Page widths inside the shell
+export const frameNarrow = "mx-auto w-full max-w-md";
+
+export const frameDefault = "mx-auto w-full max-w-5xl";
+
+export const frameWide = "w-full";
 
 // Structural grouping
 export const section = "space-y-3";

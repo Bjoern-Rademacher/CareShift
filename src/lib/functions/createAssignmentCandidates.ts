@@ -9,11 +9,6 @@ import type {
 } from "@/types/assignment";
 import type { AssignableEmployee } from "@/types/employee";
 
-const HOUR_IN_MS = 60 * 60 * 1000;
-
-const MAXIMUM_WEEKLY_HOURS = 40;
-const MINIMUM_REST_HOURS = 11;
-
 type Input = {
   selectedSlot: AssignmentShift;
   assignmentSlots: AssignmentShift[];
@@ -22,9 +17,12 @@ type Input = {
   weekEnd: Date;
 };
 
-function getDurationHours(slot: AssignmentShift): number {
-  return (slot.endTime.getTime() - slot.startTime.getTime()) / HOUR_IN_MS;
-}
+const MAXIMUM_WEEKLY_HOURS = 40;
+const MINIMUM_REST_HOURS = 11;
+
+const HOUR_IN_MS = 60 * 60 * 1000;
+const DAY_IN_MS = 24 * HOUR_IN_MS;
+const ROLLING_WINDOW_MS = 7 * DAY_IN_MS;
 
 function getHoursWithinRange(
   slot: AssignmentShift,
@@ -166,6 +164,69 @@ function getNeighborShifts(
   };
 }
 
+function getMaximumRollingHours(
+  employeeSlots: AssignmentShift[],
+  selectedSlot: AssignmentShift,
+): number {
+  const slots = [...employeeSlots, selectedSlot];
+
+  const earliestWindowStart =
+    selectedSlot.startTime.getTime() - ROLLING_WINDOW_MS;
+
+  const latestWindowStart = selectedSlot.endTime.getTime();
+
+  const possibleWindowStarts = new Set<number>([
+    earliestWindowStart,
+    selectedSlot.startTime.getTime(),
+  ]);
+
+  for (const slot of slots) {
+    const start = slot.startTime.getTime();
+    const end = slot.endTime.getTime();
+
+    // These are the points where the amount of work inside
+    // a moving 7-day window can change direction.
+    possibleWindowStarts.add(start);
+    possibleWindowStarts.add(end);
+    possibleWindowStarts.add(start - ROLLING_WINDOW_MS);
+    possibleWindowStarts.add(end - ROLLING_WINDOW_MS);
+  }
+
+  let maximumHours = 0;
+
+  for (const windowStartTime of possibleWindowStarts) {
+    if (
+      windowStartTime < earliestWindowStart ||
+      windowStartTime > latestWindowStart
+    ) {
+      continue;
+    }
+
+    const windowEndTime = windowStartTime + ROLLING_WINDOW_MS;
+
+    // The window must actually be affected by the selected shift.
+    if (
+      windowStartTime >= selectedSlot.endTime.getTime() ||
+      windowEndTime <= selectedSlot.startTime.getTime()
+    ) {
+      continue;
+    }
+
+    const windowStart = new Date(windowStartTime);
+    const windowEnd = new Date(windowEndTime);
+
+    const hours = slots.reduce(
+      (total, slot) =>
+        total + getHoursWithinRange(slot, windowStart, windowEnd),
+      0,
+    );
+
+    maximumHours = Math.max(maximumHours, hours);
+  }
+
+  return maximumHours;
+}
+
 export function createAssignmentCandidates({
   selectedSlot,
   assignmentSlots,
@@ -193,8 +254,8 @@ export function createAssignmentCandidates({
 
       const weeklyEmployeeSlots = employeeSlots.filter(
         (slot) =>
-          slot.startTime.getTime() >= weekStart.getTime() &&
-          slot.startTime.getTime() < weekEnd.getTime(),
+          slot.startTime.getTime() < weekEnd.getTime() &&
+          slot.endTime.getTime() > weekStart.getTime(),
       );
 
       const workload = calculateWorkload(
@@ -210,6 +271,14 @@ export function createAssignmentCandidates({
 
       const exceedsWeeklyHours =
         workload.assignedHours + selectedSlotHours > MAXIMUM_WEEKLY_HOURS;
+
+      const maximumRollingHours = getMaximumRollingHours(
+        employeeSlots,
+        selectedSlot,
+      );
+
+      const exceedsRollingSevenDayHours =
+        maximumRollingHours > MAXIMUM_WEEKLY_HOURS;
 
       const hasOverlap =
         previousShift?.overlaps === true || nextShift?.overlaps === true;
@@ -227,6 +296,8 @@ export function createAssignmentCandidates({
         unavailableReason = "INSUFFICIENT_REST";
       } else if (exceedsWeeklyHours) {
         unavailableReason = "AT_CAPACITY";
+      } else if (exceedsRollingSevenDayHours) {
+        unavailableReason = "ROLLING_7_DAY_LIMIT";
       }
 
       return {

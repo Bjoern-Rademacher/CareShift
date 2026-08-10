@@ -12,7 +12,10 @@ import type { EmployeeAssignmentCandidate } from "@/types/assignment";
 import type { UUID } from "@/types/common";
 
 const MINIMUM_REST_HOURS = 11;
+
 const HOUR_IN_MS = 60 * 60 * 1000;
+const DAY_IN_MS = 24 * HOUR_IN_MS;
+const ROLLING_WINDOW_MS = 7 * DAY_IN_MS;
 
 export async function getAssignmentCandidates(
   slotId: UUID,
@@ -34,24 +37,24 @@ export async function getAssignmentCandidates(
 
   const employeeIds = employees.map((employee) => employee.id);
 
-  /*
-   * Workload is calculated for:
-   * [Monday 00:00, next Monday 00:00)
-   */
   const weekStart = getMonday(selectedSlot.startTime);
   const weekEnd = getWeekdayDate(weekStart, 7);
 
-  /*
-   * Extend the query beyond the week boundaries so rest periods
-   * against the previous and next shift can also be checked.
-   */
-  const rangeStart = new Date(
-    weekStart.getTime() - MINIMUM_REST_HOURS * HOUR_IN_MS,
-  );
+  // Range needed for calendar-week workload + rest checks.
+  const restRangeStart = weekStart.getTime() - MINIMUM_REST_HOURS * HOUR_IN_MS;
 
-  const rangeEnd = new Date(
-    weekEnd.getTime() + MINIMUM_REST_HOURS * HOUR_IN_MS,
-  );
+  const restRangeEnd = weekEnd.getTime() + MINIMUM_REST_HOURS * HOUR_IN_MS;
+
+  // Any rolling 7-day window affected by assigning this shift
+  // must overlap the selected shift.
+  const rollingRangeStart =
+    selectedSlot.startTime.getTime() - ROLLING_WINDOW_MS;
+
+  const rollingRangeEnd = selectedSlot.endTime.getTime() + ROLLING_WINDOW_MS;
+
+  const rangeStart = new Date(Math.min(restRangeStart, rollingRangeStart));
+
+  const rangeEnd = new Date(Math.max(restRangeEnd, rollingRangeEnd));
 
   const assignmentSlots = await getEmployeeAssignmentsInRange({
     employeeIds,

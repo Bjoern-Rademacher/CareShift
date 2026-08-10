@@ -23,9 +23,11 @@ export async function requireAdmin() {
     return Response.json(
       {
         ok: false,
-        error: "Unauthorized.",
+        error: "Unauthenticated.",
       },
-      { status: 401 },
+      {
+        status: 401,
+      },
     );
   }
 
@@ -33,9 +35,11 @@ export async function requireAdmin() {
     return Response.json(
       {
         ok: false,
-        error: "Forbidden.",
+        error: "Unauthorized.",
       },
-      { status: 403 },
+      {
+        status: 403,
+      },
     );
   }
 

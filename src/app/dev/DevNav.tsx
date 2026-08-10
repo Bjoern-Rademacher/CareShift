@@ -18,7 +18,7 @@ export default function DevNav() {
   const pathname = usePathname();
 
   return (
-    <nav className={`${ui.card} sticky top-0 z-50`}>
+    <nav className={`${ui.card} top-0 z-50`}>
       <div className="flex flex-wrap items-center gap-2">
         {links.map((link) => {
           const isActive = pathname === link.href;

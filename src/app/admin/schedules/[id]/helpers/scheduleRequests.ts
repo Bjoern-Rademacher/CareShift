@@ -5,6 +5,7 @@ import type {
   SchedulePeriod,
 } from "@/types/scheduling";
 import type { EmployeeAssignmentCandidate } from "@/types/assignment";
+import type { AutofillResult, AutofillStrategy } from "@/types/autofill";
 
 export type AssignEmployeeResponse =
   | {
@@ -101,4 +102,30 @@ export async function getAssignmentCandidatesRequest(
   }
 
   return data.candidates;
+}
+
+export async function autofillScheduleRequest(
+  periodId: UUID,
+  strategy: AutofillStrategy,
+): Promise<AutofillResult> {
+  const response = await fetch(`/api/periods/${periodId}/autofill`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      scope: {
+        type: "ALL_OPEN",
+      },
+      strategy,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error ?? "Could not autofill schedule.");
+  }
+
+  return data.result;
 }
