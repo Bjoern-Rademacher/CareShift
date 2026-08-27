@@ -1,13 +1,12 @@
+import { requireAdmin } from "@/lib/auth/authorization";
+
 import { generateScheduleFromTemplate } from "@/lib/useCases/createScheduleFromTemplate";
+
 import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
 
-import { DEPARTMENTS } from "@/types/common";
-import type { Departments } from "@/types/common";
+import { DEPARTMENTS, Departments } from "@/types/common";
 
-type CreateScheduleRequest = {
-  department: Departments;
-  weekStartDate: string;
-};
+import type { CreateScheduleInput } from "@/types/scheduling";
 
 function isDepartment(value: unknown): value is Departments {
   return (
@@ -15,9 +14,7 @@ function isDepartment(value: unknown): value is Departments {
   );
 }
 
-function isCreateScheduleRequest(
-  value: unknown,
-): value is CreateScheduleRequest {
+function isCreateScheduleRequest(value: unknown): value is CreateScheduleInput {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -30,6 +27,12 @@ function isCreateScheduleRequest(
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   try {
     const body: unknown = await request.json();
 

@@ -30,6 +30,7 @@ export async function getAssignableEmployees() {
       lastName: true,
       departments: true,
       position: true,
+      status: true,
     },
   });
 }
@@ -72,5 +73,22 @@ export async function getAssignableEmployeesByDepartmentAndPosition({
         firstName: "asc",
       },
     ],
+  });
+}
+
+export async function getEmployeeProfileById(employeeId: UUID) {
+  return prisma.employee.findUnique({
+    where: {
+      id: employeeId,
+    },
+
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      position: true,
+      departments: true,
+      status: true,
+    },
   });
 }

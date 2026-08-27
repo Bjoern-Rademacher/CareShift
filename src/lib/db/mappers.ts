@@ -1,10 +1,12 @@
+import { createISODateString } from "@/lib/functions/dateTimeUtils";
+
+import type { ShiftSlotModel } from "@/generated/prisma/models";
 import type { ISODateString, UUID } from "@/types/common";
 import type {
   ShiftSlot,
   SchedulePeriod,
   DbShiftSlot,
 } from "@/types/scheduling";
-import type { AssignmentShift } from "@/types/assignment";
 
 export function toUiShiftSlot(slot: DbShiftSlot): ShiftSlot {
   return {
@@ -33,7 +35,7 @@ export function mapSchedulePeriodToSchedule(
     department: period.department,
     startDate: period.startDate.toISOString() as ISODateString,
     endDate: period.endDate.toISOString() as ISODateString,
-    published: period.published,
+    status: period.status,
   };
 }
 
@@ -41,4 +43,17 @@ export function mapSchedulePeriodsToSchedules(
   periods: SchedulePeriodModel[],
 ): SchedulePeriod[] {
   return periods.map(mapSchedulePeriodToSchedule);
+}
+
+export function mapShiftSlotToSchedule(slot: ShiftSlotModel): ShiftSlot {
+  return {
+    id: slot.id,
+    periodId: slot.periodId,
+    employeeId: slot.employeeId,
+    department: slot.department,
+    position: slot.position,
+    slotNumber: slot.slotNumber,
+    startTime: createISODateString(slot.startTime.toISOString()),
+    endTime: createISODateString(slot.endTime.toISOString()),
+  };
 }

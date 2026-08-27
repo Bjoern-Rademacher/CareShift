@@ -1,43 +1,73 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
-import ThemeSwitch from "@/app/theme/ThemeSwitch";
+import { getCurrentUser } from "@/lib/auth/currentUser";
 
-import * as ui from "@/ui/classes";
+import type { Role } from "@/types/auth";
 
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/schedules", label: "Schedules" },
-  { href: "/admin/schedules", label: "Admin/Schedules" },
-  { href: "/dev/login", label: "Dev Login" },
-  { href: "/dev/logout", label: "Dev Logout" },
-  { href: "/api/auth/session", label: "Session" },
-];
+type NavigationItem = {
+  label: string;
+  href: string;
+};
 
-export default function DevNav() {
-  const pathname = usePathname();
+const navigationByRole = {
+  ADMIN: [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Schedules", href: "/admin/schedules" },
+    { label: "Employees", href: "/admin/employees" },
+  ],
+
+  EMPLOYEE: [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "My schedule", href: "/employee/schedules" },
+    { label: "My profile", href: "/employee/profile" },
+  ],
+
+  DISPLAY: [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Schedules", href: "/schedules" },
+  ],
+} satisfies Record<Role, NavigationItem[]>;
+
+export default async function DevNav() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const navigation = navigationByRole[user.role];
 
   return (
-    <nav className={`${ui.card} top-0 z-50`}>
-      <div className="flex flex-wrap items-center gap-2">
-        {links.map((link) => {
-          const isActive = pathname === link.href;
+    <div className="w-full border-b border-border bg-surface">
+      <nav
+        aria-label="Application navigation"
+        className="flex min-h-14 w-full items-center gap-2 px-6 lg:px-8"
+      >
+        <span className="mr-4 text-xs font-medium uppercase tracking-wide text-foreground-subtle">
+          DevNav | {formatRole(user.role)}
+        </span>
 
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={isActive ? ui.buttonPrimary : ui.button}
-            >
-              {link.label}
-            </Link>
-          );
-        })}
-      </div>
-      <ThemeSwitch />
-    </nav>
+        {navigation.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="
+              flex min-h-10 items-center rounded-control
+              px-4 text-sm font-medium text-foreground-muted
+              transition-colors duration-fast
+              hover:bg-surface-hover hover:text-foreground
+              focus-visible:outline-none focus-visible:ring-2
+              focus-visible:ring-ring
+            "
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    </div>
   );
+}
+
+function formatRole(role: Role) {
+  return role.charAt(0) + role.slice(1).toLowerCase();
 }

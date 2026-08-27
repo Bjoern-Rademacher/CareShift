@@ -13,8 +13,8 @@ export function mapSchedulePeriodToSchedule(
     id: period.id,
     department: period.department,
     startDate: createISODateString(period.startDate.toISOString()),
-    endDate: createISODateString(period.startDate.toISOString()),
-    published: period.published,
+    endDate: createISODateString(period.endDate.toISOString()),
+    status: period.status,
   };
 }
 

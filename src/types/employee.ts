@@ -5,6 +5,10 @@ import {
   AccessPermission,
 } from "@/types/common";
 
+import type { ShiftSlot, SchedulePeriod } from "@/types/scheduling";
+
+import type { Role } from "@/types/auth";
+
 export type EmployeeStatus = "ACTIVE" | "DISABLED";
 
 export type EmployeeBase = {
@@ -16,12 +20,19 @@ export type EmployeeBase = {
 export type AssignableEmployee = EmployeeBase & {
   departments: Departments[];
   position: EmployeePosition;
+  status: EmployeeStatus;
 };
 
 export type DisplayEmployee = EmployeeBase & {
   departments: Departments[];
   position: EmployeePosition;
   status: EmployeeStatus;
+};
+
+export type ScheduleEmployee = {
+  id: UUID;
+  firstName: string;
+  lastName: string;
 };
 
 export type ValidatableEmployee = {
@@ -55,3 +66,21 @@ export const Position = {
 } as const;
 
 export type Position = (typeof Position)[keyof typeof Position];
+
+export type EmployeeProfileData = {
+  id: UUID;
+
+  firstName: string;
+  lastName: string;
+
+  position: Position;
+  departments: Departments[];
+  status: EmployeeStatus;
+
+  role: Exclude<Role, "DISPLAY">;
+};
+
+export type EmployeeActiveSchedule = {
+  period: SchedulePeriod;
+  shiftSlots: ShiftSlot[];
+};

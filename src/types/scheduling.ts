@@ -1,12 +1,13 @@
-import {
-  UUID,
+import type {
   Departments,
   EmployeePosition,
-  Weekday,
   ISODateString,
   LocalTimeString,
+  UUID,
+  Weekday,
 } from "@/types/common";
 
+import type { ApiResponse } from "@/types/api";
 export interface TemplateRule {
   id: UUID;
   department: Departments;
@@ -17,6 +18,7 @@ export interface TemplateRule {
   slots: number;
   active: boolean;
 }
+
 export interface ShiftSlot {
   id: UUID;
   periodId: UUID;
@@ -38,24 +40,75 @@ export type DbShiftSlot = {
   startTime: Date;
   endTime: Date;
 };
+
+export type PeriodStatus = "DRAFT" | "VALIDATED" | "PUBLISHED";
+
 export interface SchedulePeriod {
   id: UUID;
   department: Departments;
   startDate: ISODateString;
   endDate: ISODateString;
-  published: boolean;
+  status: PeriodStatus;
 }
 
-export type PublishValidationErrorCode =
+export type SchedulePeriodOverview = {
+  id: UUID;
+  department: Departments;
+  startDate: Date;
+  endDate: Date;
+  status: PeriodStatus;
+};
+
+export type AdminScheduleWeek = {
+  startDate: Date;
+  endDate: Date;
+};
+
+export type AdminSchedulesData = {
+  weeks: AdminScheduleWeek[];
+  periods: SchedulePeriodOverview[];
+};
+
+export type scheduleValidationErrorCode =
   | "MISSING_ASSIGNMENT"
   | "DOUBLE_ASSIGNMENT"
   | "INSUFFICIENT_REST"
   | "WEEKLY_HOURS_EXCEEDED";
 
-export type PublishValidationError = {
-  code: PublishValidationErrorCode;
+export type scheduleValidationError = {
+  code: scheduleValidationErrorCode;
   message: string;
 };
+
+export type schedulePublishError = string;
+
+export type ScheduleValidationResult = {
+  noOverlaps: boolean;
+  sufficientRest: boolean;
+  weeklyHoursValid: boolean;
+  rollingSevenDayHoursValid: boolean;
+};
+
+export type ScheduleAction = "VALIDATE" | "PUBLISH";
+
+export type ScheduleActionResponse =
+  | {
+      ok: true;
+      action: "VALIDATE";
+    }
+  | {
+      ok: true;
+      action: "PUBLISH";
+      period: SchedulePeriod;
+    }
+  | {
+      ok: false;
+      errors: scheduleValidationError[];
+    }
+  | {
+      ok: false;
+      error: string;
+    };
 
 export type AssignmentValidationError = {
   code:
@@ -83,3 +136,34 @@ export type ValidatableShiftSlot = {
   startTime: Date;
   endTime: Date;
 };
+
+export type EmployeeScheduleOverview = {
+  period: SchedulePeriod;
+  shiftSlots: ShiftSlot[];
+};
+
+export type EmployeeSchedulesData = {
+  currentSchedules: EmployeeScheduleOverview[];
+  pastSchedules: EmployeeScheduleOverview[];
+};
+
+export type CreateScheduleInput = {
+  department: Departments;
+  weekStartDate: string;
+};
+
+export type CreateScheduleErrorCode = "SCHEDULE_ALREADY_EXISTS";
+
+export type CreateScheduleErrorDetails = {
+  scheduleId: UUID;
+};
+
+export type CreateScheduleResponse = ApiResponse<
+  {
+    schedule: {
+      id: UUID;
+    };
+  },
+  CreateScheduleErrorCode,
+  CreateScheduleErrorDetails
+>;

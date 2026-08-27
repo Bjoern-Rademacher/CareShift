@@ -1,5 +1,5 @@
 import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
-import { requireAdmin } from "@/app/api/_shared/routeGuards";
+import { requireAdmin } from "@/lib/auth/authorization";
 
 import { getAssignmentCandidates } from "@/lib/useCases/getAssignmentCandidates";
 

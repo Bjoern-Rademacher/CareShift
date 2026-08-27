@@ -1,3 +1,5 @@
+import { prisma } from "@/lib/db/prisma";
+
 import {
   getEmployeeShiftSlotsAroundShift,
   getEmployeeShiftSlotsForWeek,
@@ -5,6 +7,7 @@ import {
   updateShiftSlotEmployee,
 } from "@/lib/db/shiftSlots";
 import { getEmployeeById } from "@/lib/db/employees";
+import { markSchedulePeriodDraft } from "@/lib/db/schedulePeriods";
 
 import { validateAssignment } from "@/lib/validation/assignmentRules";
 
@@ -103,9 +106,23 @@ export async function assignEmployeeToShiftSlot({
     };
   }
 
-  const assigned = await updateShiftSlotEmployee({
-    slotId,
-    employeeId,
+  const assigned = await prisma.$transaction(async (tx) => {
+    const updatedSlot = await updateShiftSlotEmployee(
+      {
+        slotId,
+        employeeId,
+      },
+      tx,
+    );
+
+    if (
+      slot.period.status === "VALIDATED" ||
+      slot.period.status === "PUBLISHED"
+    ) {
+      await markSchedulePeriodDraft(slot.periodId, tx);
+    }
+
+    return updatedSlot;
   });
 
   if (!assigned.employeeId) {

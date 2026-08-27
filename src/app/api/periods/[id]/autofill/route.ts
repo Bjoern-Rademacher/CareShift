@@ -1,7 +1,6 @@
-// app/api/periods/[id]/autofill/route.ts
-
 import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
-import { requireAdmin } from "@/app/api/_shared/routeGuards";
+
+import { requireAdmin } from "@/lib/auth/authorization";
 
 import { autofillSchedule } from "@/lib/useCases/autofillSchedule";
 
@@ -22,10 +21,10 @@ type RequestBody = {
 };
 
 export async function POST(request: Request, { params }: Params) {
-  const guardResponse = await requireAdmin();
+  const auth = await requireAdmin();
 
-  if (guardResponse) {
-    return guardResponse;
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { id } = await params;

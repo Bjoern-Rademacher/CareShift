@@ -1,8 +1,11 @@
 import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
 
+import { requireAdmin } from "@/lib/auth/authorization";
+
 import { getAssignableEmployees } from "@/lib/db/employees";
 import {
   getSchedulePeriodById,
+  markSchedulePeriodValidated,
   publishSchedulePeriod,
 } from "@/lib/db/schedulePeriods";
 
@@ -29,6 +32,12 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.ok) {
+      return auth.response;
+    }
+
     const { id } = await context.params;
 
     const body: unknown = await request.json();
@@ -55,25 +64,58 @@ export async function POST(
       );
     }
 
-    const employees = await getAssignableEmployees();
+    if (body.action === "VALIDATE") {
+      if (period.status === "PUBLISHED") {
+        return Response.json(
+          {
+            ok: false,
+            error: "Schedule already published.",
+          },
+          { status: 409 },
+        );
+      }
 
-    const validationErrors = validateSchedule(period.shiftSlots, employees);
+      const employees = await getAssignableEmployees();
 
-    if (validationErrors.length > 0) {
+      const validationErrors = validateSchedule(period.shiftSlots, employees);
+
+      if (validationErrors.length > 0) {
+        return Response.json(
+          {
+            ok: false,
+            errors: validationErrors,
+          },
+          { status: 409 },
+        );
+      }
+
+      const validatedPeriod = await markSchedulePeriodValidated(id);
+
+      return Response.json({
+        ok: true,
+        action: "VALIDATE",
+        period: mapSchedulePeriodToSchedule(validatedPeriod),
+      });
+    }
+
+    if (period.status === "DRAFT") {
       return Response.json(
         {
           ok: false,
-          errors: validationErrors,
+          error: "Schedule must be validated before publishing.",
         },
         { status: 409 },
       );
     }
 
-    if (body.action === "VALIDATE") {
-      return Response.json({
-        ok: true,
-        action: "VALIDATE",
-      });
+    if (period.status === "PUBLISHED") {
+      return Response.json(
+        {
+          ok: false,
+          error: "Schedule already published.",
+        },
+        { status: 409 },
+      );
     }
 
     const publishedPeriod = await publishSchedulePeriod(id);

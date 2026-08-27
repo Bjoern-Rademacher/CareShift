@@ -9,6 +9,8 @@ import type {
   Weekday,
 } from "@/generated/prisma/enums";
 
+import type { PeriodStatus } from "@/types/scheduling";
+
 const DEPARTMENTS: Department[] = ["ER", "ICU", "SURGERY", "RADIOLOGY"];
 
 const WEEKDAY_OFFSETS: Record<Weekday, number> = {
@@ -44,12 +46,19 @@ type AssignedSlot = GeneratedSlot & {
   employeeId: string;
 };
 
+type SeedWeek = {
+  startDate: Date;
+  status: PeriodStatus;
+  assignmentRatio: number;
+};
+
 function getUtcMonday(date: Date): Date {
   const result = new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
   );
 
   const weekday = result.getUTCDay();
+
   const daysSinceMonday = weekday === 0 ? 6 : weekday - 1;
 
   result.setUTCDate(result.getUTCDate() - daysSinceMonday);
@@ -182,8 +191,13 @@ function assignSlots({
   assignmentRatio: number;
   weekStartDate: Date;
   weekEndDate: Date;
-}): Array<GeneratedSlot & { employeeId: string | null }> {
+}): Array<
+  GeneratedSlot & {
+    employeeId: string | null;
+  }
+> {
   const assignmentTarget = Math.floor(slots.length * assignmentRatio);
+
   const weeklyHours = new Map<string, number>();
 
   // Count assignments already created in other departments of this week.
@@ -192,7 +206,9 @@ function assignSlots({
       assignment.startTime.getTime() >= weekStartDate.getTime() &&
       assignment.startTime.getTime() < weekEndDate.getTime();
 
-    if (!belongsToWeek) continue;
+    if (!belongsToWeek) {
+      continue;
+    }
 
     weeklyHours.set(
       assignment.employeeId,
@@ -202,6 +218,7 @@ function assignSlots({
   }
 
   const allAssignments = [...existingAssignments];
+
   let assignedCount = 0;
 
   return slots.map((slot) => {
@@ -264,7 +281,7 @@ function assignSlots({
   });
 }
 
-async function main() {
+export async function seedPeriods() {
   const employees = await prisma.employee.findMany({
     select: {
       id: true,
@@ -289,21 +306,23 @@ async function main() {
 
   const currentWeekStart = getUtcMonday(new Date());
 
-  const weeks = [
+  const weeks: SeedWeek[] = [
     {
       startDate: addUtcDays(currentWeekStart, -7),
-      published: true,
+      status: "DRAFT",
       assignmentRatio: 1,
     },
+
     {
       startDate: currentWeekStart,
-      published: false,
+      status: "DRAFT",
       assignmentRatio: 0.7,
     },
+
     {
       startDate: addUtcDays(currentWeekStart, 7),
-      published: false,
-      assignmentRatio: 0,
+      status: "DRAFT",
+      assignmentRatio: 1,
     },
   ];
 
@@ -321,6 +340,7 @@ async function main() {
             not: null,
           },
         },
+
         select: {
           employeeId: true,
           department: true,
@@ -361,7 +381,10 @@ async function main() {
           department,
           startDate: week.startDate,
           endDate: weekEndDate,
-          published: week.published,
+
+          // Seeded periods always start as drafts.
+          status: week.status,
+
           shiftSlots: {
             create: assignedSlots.map((slot) => ({
               employeeId: slot.employeeId,
@@ -377,14 +400,5 @@ async function main() {
     }
   }
 
-  console.log("Seeded 12 schedule periods and their shift slots.");
+  console.log("Seeded 12 draft schedule periods and their shift slots.");
 }
-
-main()
-  .catch((error) => {
-    console.error("Schedule-period seed failed:", error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

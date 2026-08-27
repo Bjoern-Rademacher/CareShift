@@ -29,11 +29,6 @@ export async function bulkAssignShiftSlots(
     throw new Error("One or more selected shift slots were not found.");
   }
 
-  // Bulk assignment must not modify published schedules.
-  if (selectedSlots.some((slot) => slot.period.published)) {
-    throw new Error("Published schedules cannot be modified.");
-  }
-
   const employee = await getEmployeeById(employeeId);
 
   if (!employee) {
@@ -146,18 +141,43 @@ export async function bulkAssignShiftSlots(
   }
 
   // Every selected assignment passed validation, so persist atomically.
-  await prisma.$transaction(
-    slotsToAssign.map((slot) =>
-      prisma.shiftSlot.update({
+  await prisma.$transaction(async (tx) => {
+    for (const slot of slotsToAssign) {
+      await tx.shiftSlot.update({
         where: {
           id: slot.id,
         },
         data: {
           employeeId,
         },
-      }),
-    ),
-  );
+      });
+    }
+
+    const periodIdsToReset = [
+      ...new Set(
+        slotsToAssign
+          .filter(
+            (slot) =>
+              slot.period.status === "VALIDATED" ||
+              slot.period.status === "PUBLISHED",
+          )
+          .map((slot) => slot.periodId),
+      ),
+    ];
+
+    if (periodIdsToReset.length > 0) {
+      await tx.schedulePeriod.updateMany({
+        where: {
+          id: {
+            in: periodIdsToReset,
+          },
+        },
+        data: {
+          status: "DRAFT",
+        },
+      });
+    }
+  });
 
   return {
     assignedSlotIds: slotsToAssign.map((slot) => slot.id),

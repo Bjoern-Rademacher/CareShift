@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     user = {
       userId: "dev-employee-1",
       role: "employee",
-      employeeId: "e-1",
+      employeeId: "12324092-b542-45be-b477-28c824438a42",
     };
   } else {
     user = {

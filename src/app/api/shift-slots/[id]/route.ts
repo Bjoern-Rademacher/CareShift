@@ -68,17 +68,17 @@ export async function PATCH(
 }
 
 export function GET() {
-  return METHOD_NOT_ALLOWED;
+  return METHOD_NOT_ALLOWED();
 }
 
 export function POST() {
-  return METHOD_NOT_ALLOWED;
+  return METHOD_NOT_ALLOWED();
 }
 
 export function PUT() {
-  return METHOD_NOT_ALLOWED;
+  return METHOD_NOT_ALLOWED();
 }
 
 export function DELETE() {
-  return METHOD_NOT_ALLOWED;
+  return METHOD_NOT_ALLOWED();
 }

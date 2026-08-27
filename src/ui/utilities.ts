@@ -27,7 +27,7 @@ export const unassignedIndicator =
   "h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400";
 
 export const assignButton =
-  "w-full rounded border border-dashed border-amber-500/50 px-2 py-0.5 text-xs text-amber-300 transition hover:bg-amber-500/10";
+  "w-fit rounded border border-dashed border-amber-500/50 px-2 py-0.5 text-xs text-amber-300 transition hover:bg-amber-500/10";
 
 export const reassignButton =
-  "w-fit rounded border border-sky-500/60 px-2 py-0.5 text-xs text-sky-300 transition hover:bg-sky-500/10";
+  "w-fit rounded border border-sky-500/60 px-2 py-0.5 text-xs text-sky-700 transition hover:bg-sky-500/10";

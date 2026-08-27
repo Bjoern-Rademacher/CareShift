@@ -1,7 +1,7 @@
 import type { AssignableEmployee } from "@/types/employee";
 
 import type {
-  PublishValidationError,
+  scheduleValidationError,
   ValidatableShiftSlot,
 } from "@/types/scheduling";
 
@@ -15,7 +15,7 @@ import {
 export function validateSchedule(
   shiftSlots: ValidatableShiftSlot[],
   employees: AssignableEmployee[],
-): PublishValidationError[] {
+): scheduleValidationError[] {
   return [
     ...checkMissingAssignments(shiftSlots),
     ...checkEmployeeOverlaps(shiftSlots, employees),

@@ -38,6 +38,12 @@ enum Weekday {
   SUN
 }
 
+enum PeriodStatus {
+  DRAFT
+  VALIDATED
+  PUBLISHED
+}
+
 model Employee {
   id          String         @id @default(uuid()) @db.Uuid
   firstName   String
@@ -54,7 +60,7 @@ model SchedulePeriod {
   department Department
   startDate  DateTime
   endDate    DateTime
-  published  Boolean    @default(false)
+  status     PeriodStatus @default(DRAFT)
 
   shiftSlots ShiftSlot[]
 

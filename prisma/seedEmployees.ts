@@ -468,7 +468,7 @@ const employees: Prisma.EmployeeCreateManyInput[] = [
   },
 ];
 
-async function main() {
+export async function seedEmployees() {
   await prisma.employee.deleteMany();
 
   await prisma.employee.createMany({
@@ -477,12 +477,3 @@ async function main() {
 
   console.log(`Seeded ${employees.length} employees.`);
 }
-
-main()
-  .catch((error) => {
-    console.error("Employee seed failed:", error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

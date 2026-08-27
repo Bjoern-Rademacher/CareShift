@@ -21,15 +21,10 @@ export async function autofillSchedule(
 ): Promise<AutofillResult> {
   const { periodId, scope, strategy } = input;
 
-  // Load the schedule period and make sure it can still be modified.
   const period = await getSchedulePeriodById(periodId);
 
   if (!period) {
     throw new Error("Schedule period not found.");
-  }
-
-  if (period.published) {
-    throw new Error("Published schedules cannot be autofilled.");
   }
 
   // Load all slots for the period, then reduce them to the requested autofill scope.
@@ -97,24 +92,36 @@ export async function autofillSchedule(
   });
 
   // No valid assignments could be generated.
+  // Since nothing changes, the period status stays untouched.
   if (result.assignments.length === 0) {
     return result;
   }
 
   // Persist the complete generated plan atomically.
-  // Either every assignment is written or none are.
-  await prisma.$transaction(
-    result.assignments.map((assignment) =>
-      prisma.shiftSlot.update({
+  // Any previous validation or publication becomes stale once assignments change.
+  await prisma.$transaction(async (tx) => {
+    for (const assignment of result.assignments) {
+      await tx.shiftSlot.update({
         where: {
           id: assignment.slotId,
         },
         data: {
           employeeId: assignment.employeeId,
         },
-      }),
-    ),
-  );
+      });
+    }
+
+    if (period.status === "VALIDATED" || period.status === "PUBLISHED") {
+      await tx.schedulePeriod.update({
+        where: {
+          id: periodId,
+        },
+        data: {
+          status: "DRAFT",
+        },
+      });
+    }
+  });
 
   return result;
 }

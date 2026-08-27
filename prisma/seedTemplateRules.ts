@@ -299,7 +299,7 @@ const templateRules: Prisma.TemplateRuleCreateManyInput[] = [
   }),
 ];
 
-async function main() {
+export async function seedTemplateRules() {
   await prisma.templateRule.deleteMany();
 
   await prisma.templateRule.createMany({
@@ -308,12 +308,3 @@ async function main() {
 
   console.log(`Seeded ${templateRules.length} template rules.`);
 }
-
-main()
-  .catch((error) => {
-    console.error("Template-rule seed failed:", error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/db/prisma";
-import { UUID } from "@/types/common";
+import type { Prisma } from "@/generated/prisma/client";
+
+import { MINIMUM_REST_HOURS } from "@/lib/validation/sharedRules";
 
 import type { AssignmentShift } from "@/types/assignment";
+import type { UUID } from "@/types/common";
 
 type AssignEmployeeToShiftSlotInput = {
   slotId: UUID;
@@ -20,11 +23,14 @@ type GetEmployeeShiftSlotsAroundShiftInput = {
   shiftEnd: Date;
 };
 
+type ScheduleVisibility = "PUBLISHED_ONLY" | "INCLUDE_UNPUBLISHED";
+
 export async function getShiftSlotById(id: string) {
   return prisma.shiftSlot.findUnique({
     where: {
       id,
     },
+
     select: {
       id: true,
       periodId: true,
@@ -34,22 +40,23 @@ export async function getShiftSlotById(id: string) {
       slotNumber: true,
       startTime: true,
       endTime: true,
+
       period: {
         select: {
           startDate: true,
           endDate: true,
-          published: true,
+          status: true,
         },
       },
     },
   });
 }
 
-export async function updateShiftSlotEmployee({
-  slotId,
-  employeeId,
-}: AssignEmployeeToShiftSlotInput) {
-  return prisma.shiftSlot.update({
+export async function updateShiftSlotEmployee(
+  { slotId, employeeId }: AssignEmployeeToShiftSlotInput,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) {
+  return db.shiftSlot.update({
     where: {
       id: slotId,
     },
@@ -65,8 +72,14 @@ export async function updateShiftSlotEmployee({
 
 export async function unassignEmployeeFromShiftSlot(slotId: string) {
   return prisma.shiftSlot.update({
-    where: { id: slotId },
-    data: { employeeId: null },
+    where: {
+      id: slotId,
+    },
+
+    data: {
+      employeeId: null,
+    },
+
     include: {
       employee: true,
     },
@@ -85,15 +98,16 @@ export async function getEmployeeShiftSlotsForWeek({
       // Weekly-hour validation counts every shift in the week
       // where the shift starts. Overnight shifts therefore belong
       // to exactly one schedule period and are never counted twice.
-
       startTime: {
         gte: weekStartDate,
         lt: weekEndDate,
       },
     },
+
     orderBy: {
       startTime: "asc",
     },
+
     select: {
       id: true,
       periodId: true,
@@ -105,8 +119,6 @@ export async function getEmployeeShiftSlotsForWeek({
     },
   });
 }
-
-import { MINIMUM_REST_HOURS } from "@/lib/validation/sharedRules";
 
 export async function getEmployeeShiftSlotsAroundShift({
   employeeId,
@@ -125,19 +137,19 @@ export async function getEmployeeShiftSlotsAroundShift({
 
       // Rest-time and overlap validation must also consider
       // assignments from the previous and next schedule periods.
-      // Therefore every shift intersecting the surrounding time
-      // window is loaded instead of only the current week.
-
       startTime: {
         lt: rangeEnd,
       },
+
       endTime: {
         gt: rangeStart,
       },
     },
+
     orderBy: {
       startTime: "asc",
     },
+
     select: {
       id: true,
       periodId: true,
@@ -164,13 +176,16 @@ export async function getEmployeeAssignmentsInRange({
       employeeId: {
         in: employeeIds,
       },
+
       startTime: {
         lt: rangeEnd,
       },
+
       endTime: {
         gt: rangeStart,
       },
     },
+
     select: {
       id: true,
       periodId: true,
@@ -181,6 +196,7 @@ export async function getEmployeeAssignmentsInRange({
       startTime: true,
       endTime: true,
     },
+
     orderBy: [
       {
         employeeId: "asc",
@@ -199,6 +215,7 @@ export async function getShiftSlotsByPeriodId(
     where: {
       periodId,
     },
+
     select: {
       id: true,
       periodId: true,
@@ -209,6 +226,7 @@ export async function getShiftSlotsByPeriodId(
       startTime: true,
       endTime: true,
     },
+
     orderBy: {
       startTime: "asc",
     },
@@ -222,6 +240,7 @@ export async function getShiftSlotsByIds(slotIds: UUID[]) {
         in: slotIds,
       },
     },
+
     select: {
       id: true,
       periodId: true,
@@ -231,14 +250,53 @@ export async function getShiftSlotsByIds(slotIds: UUID[]) {
       slotNumber: true,
       startTime: true,
       endTime: true,
+
       period: {
         select: {
-          published: true,
+          status: true,
         },
       },
     },
+
     orderBy: {
       startTime: "asc",
     },
+  });
+}
+
+export async function getShiftSlotsByEmployee(
+  employeeId: UUID,
+  visibility: ScheduleVisibility,
+) {
+  return prisma.shiftSlot.findMany({
+    where: {
+      employeeId,
+
+      period:
+        visibility === "PUBLISHED_ONLY"
+          ? {
+              status: "PUBLISHED",
+            }
+          : {
+              status: {
+                in: ["DRAFT", "VALIDATED", "PUBLISHED"],
+              },
+            },
+    },
+
+    include: {
+      period: true,
+    },
+
+    orderBy: [
+      {
+        period: {
+          startDate: "asc",
+        },
+      },
+      {
+        startTime: "asc",
+      },
+    ],
   });
 }
