@@ -19,10 +19,10 @@ const VALID_VISIBILITIES: ScheduleVisibility[] = [
 ];
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const authError = await requireAdmin();
+  const auth = await requireAdmin();
 
-  if (authError) {
-    return authError;
+  if (!auth.ok) {
+    return auth.response;
   }
 
   try {

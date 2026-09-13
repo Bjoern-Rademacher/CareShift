@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import * as ui from "@/ui/classes";
 
 import AssignModal from "@/app/(app)/admin/schedules/[id]/components/AssignModal";
+import ClearAssignmentsModal from "@/app/(app)/admin/schedules/[id]/components/ClearAssignmentsModal";
 import PublishChecklist from "@/app/(app)/admin/schedules/[id]/components/PublishChecklist";
 import ReturnToDraftModal from "@/app/(app)/admin/schedules/[id]/components/ReturnToDraftModal";
 import ScheduleControls from "@/app/(app)/admin/schedules/[id]/components/ScheduleControls";
@@ -21,6 +22,7 @@ import { filterSchedule } from "@/app/(app)/admin/schedules/[id]/helpers/filterS
 import {
   assignEmployeeRequest,
   autofillScheduleRequest,
+  clearScheduleAssignmentsRequest,
   getAssignmentCandidatesRequest,
   returnScheduleToDraftRequest,
   scheduleActionRequest,
@@ -53,6 +55,7 @@ type Props = {
 type ScheduleMutation =
   | "ASSIGN"
   | "AUTOFILL"
+  | "CLEAR_ASSIGNMENTS"
   | "VALIDATE"
   | "PUBLISH"
   | "RETURN_TO_DRAFT";
@@ -88,6 +91,14 @@ export default function SlotsClient({
   const [activeMutation, setActiveMutation] = useState<ScheduleMutation | null>(
     null,
   );
+
+  // Clear-assignments modal state.
+  const [isClearAssignmentsModalOpen, setIsClearAssignmentsModalOpen] =
+    useState(false);
+
+  const [clearAssignmentsError, setClearAssignmentsError] = useState<
+    string | null
+  >(null);
 
   // Return-to-draft modal state.
   const [isReturnToDraftModalOpen, setIsReturnToDraftModalOpen] =
@@ -164,6 +175,7 @@ export default function SlotsClient({
 
   const mutationRunning = activeMutation !== null;
   const isAutofilling = activeMutation === "AUTOFILL";
+  const isClearingAssignments = activeMutation === "CLEAR_ASSIGNMENTS";
   const isValidating = activeMutation === "VALIDATE";
   const isPublishing = activeMutation === "PUBLISH";
   const isReturningToDraft = activeMutation === "RETURN_TO_DRAFT";
@@ -391,6 +403,58 @@ export default function SlotsClient({
     }
   }
 
+  function handleOpenClearAssignmentsModal() {
+    if (!canEdit || mutationRunning || assignedCount === 0) {
+      return;
+    }
+
+    setClearAssignmentsError(null);
+    setIsClearAssignmentsModalOpen(true);
+  }
+
+  function handleCloseClearAssignmentsModal() {
+    if (isClearingAssignments) {
+      return;
+    }
+
+    setClearAssignmentsError(null);
+    setIsClearAssignmentsModalOpen(false);
+  }
+
+  async function handleClearAssignments() {
+    if (!canEdit || mutationRunning || assignedCount === 0) {
+      return;
+    }
+
+    setActiveMutation("CLEAR_ASSIGNMENTS");
+    setClearAssignmentsError(null);
+
+    try {
+      const result = await clearScheduleAssignmentsRequest(schedulePeriod.id);
+
+      if (!result.ok) {
+        setClearAssignmentsError(result.error.message);
+
+        return;
+      }
+
+      // Assignment-dependent results are no longer valid.
+      invalidateScheduleValidation();
+      setAutofillResult(null);
+      setIsClearAssignmentsModalOpen(false);
+
+      router.refresh();
+    } catch (error) {
+      setClearAssignmentsError(
+        error instanceof Error
+          ? error.message
+          : "Could not clear schedule assignments.",
+      );
+    } finally {
+      setActiveMutation(null);
+    }
+  }
+
   function handleOpenReturnToDraftModal() {
     if (schedulePeriod.status === "DRAFT" || mutationRunning) {
       return;
@@ -453,7 +517,7 @@ export default function SlotsClient({
           />
 
           {canEdit ? (
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <button
                 type="button"
                 className={ui.buttonPrimary}
@@ -461,6 +525,15 @@ export default function SlotsClient({
                 onClick={handleAutofill}
               >
                 {isAutofilling ? "Autofilling…" : "Autofill open slots"}
+              </button>
+
+              <button
+                type="button"
+                className={ui.button}
+                disabled={mutationRunning || assignedCount === 0}
+                onClick={handleOpenClearAssignmentsModal}
+              >
+                {isClearingAssignments ? "Clearing…" : "Clear assignments"}
               </button>
 
               {autofillResult && (
@@ -568,6 +641,17 @@ export default function SlotsClient({
           closeValidationErrors={() => setAssignmentValidationErrors([])}
           systemError={assignSystemError}
           closeSystemError={() => setAssignSystemError(null)}
+        />
+      )}
+
+      {isClearAssignmentsModalOpen && (
+        <ClearAssignmentsModal
+          assignedCount={assignedCount}
+          isSubmitting={isClearingAssignments}
+          error={clearAssignmentsError}
+          onConfirm={handleClearAssignments}
+          onClose={handleCloseClearAssignmentsModal}
+          onClearError={() => setClearAssignmentsError(null)}
         />
       )}
 

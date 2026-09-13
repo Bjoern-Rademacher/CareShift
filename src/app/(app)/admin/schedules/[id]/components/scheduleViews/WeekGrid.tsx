@@ -26,7 +26,7 @@ type SharedProps = {
 
 type Props =
   | (SharedProps & {
-      canAssign: true;
+      canAssign: boolean;
       assignmentDisabled: boolean;
       onAssignClick: (slotId: UUID) => void;
     })

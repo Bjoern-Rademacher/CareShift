@@ -7,18 +7,19 @@ import {
 import { getTemplateRulesByDepartment } from "@/lib/db/templateRules";
 import { toTemplateRules } from "@/lib/mappers/templateRules";
 
-import type { Departments } from "@/types/common";
-import { SCHEDULE_ERRORS } from "@/domain/errors/scheduleErrors";
-
-type GenerateScheduleFromTemplateInput = {
-  department: Departments;
-  weekStartDate: Date;
-};
+import {
+  SCHEDULE_ERRORS,
+  scheduleErrorMessages,
+} from "@/domain/errors/scheduleErrors";
+import type {
+  GenerateScheduleFromTemplateInput,
+  GenerateScheduleFromTemplateResult,
+} from "@/types/useCases/createScheduleFromTemplate";
 
 export async function generateScheduleFromTemplate({
   department,
   weekStartDate,
-}: GenerateScheduleFromTemplateInput) {
+}: GenerateScheduleFromTemplateInput): Promise<GenerateScheduleFromTemplateResult> {
   const scheduleStartDate = getMonday(weekStartDate);
 
   const scheduleEndDate = getWeekdayDate(scheduleStartDate, 7);
@@ -31,9 +32,12 @@ export async function generateScheduleFromTemplate({
   if (existingSchedule) {
     return {
       ok: false,
-      code: SCHEDULE_ERRORS.SCHEDULE_ALREADY_EXISTS,
-      scheduleId: existingSchedule.id,
-    } as const;
+      error: {
+        code: SCHEDULE_ERRORS.SCHEDULE_ALREADY_EXISTS,
+        message: scheduleErrorMessages.SCHEDULE_ALREADY_EXISTS,
+        details: { scheduleId: existingSchedule.id },
+      },
+    };
   }
 
   const dbRules = await getTemplateRulesByDepartment(department);
@@ -52,7 +56,7 @@ export async function generateScheduleFromTemplate({
   });
 
   return {
-    ok: true as const,
-    schedule,
+    ok: true,
+    data: { schedule: { id: schedule.id } },
   };
 }

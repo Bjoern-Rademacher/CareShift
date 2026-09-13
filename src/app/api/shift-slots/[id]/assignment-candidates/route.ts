@@ -13,10 +13,10 @@ export async function GET(
     }>;
   },
 ) {
-  const guardResponse = await requireAdmin();
+  const auth = await requireAdmin();
 
-  if (guardResponse) {
-    return guardResponse;
+  if (!auth.ok) {
+    return auth.response;
   }
 
   try {

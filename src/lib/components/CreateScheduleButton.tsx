@@ -49,13 +49,14 @@ export default function CreateScheduleButton(props: Props) {
       });
 
       if (!result.ok) {
+        const scheduleAlreadyExists =
+          result.error.code === "SCHEDULE_ALREADY_EXISTS";
+
         setError(
-          result.code === "SCHEDULE_ALREADY_EXISTS"
-            ? "Already exists"
-            : "Create failed",
+          scheduleAlreadyExists ? "Already exists" : result.error.message,
         );
 
-        if (result.code === "SCHEDULE_ALREADY_EXISTS") {
+        if (scheduleAlreadyExists) {
           router.refresh();
         }
 
@@ -72,7 +73,7 @@ export default function CreateScheduleButton(props: Props) {
 
   if (props.size === "compact") {
     return (
-      <div className={`flex items-center justify-end gap-2`}>
+      <div className="flex items-center justify-end gap-2">
         {error ? (
           <>
             <span role="alert" className={`${ui.badge} ${ui.badgeDanger}`}>
@@ -122,6 +123,7 @@ export default function CreateScheduleButton(props: Props) {
             >
               {pending ? "Creating…" : "Create Schedule"}
             </span>
+
             {pending ? (
               <LoaderCircle
                 className="size-4 shrink-0 animate-spin"

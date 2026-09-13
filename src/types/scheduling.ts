@@ -1,3 +1,4 @@
+import type { ApiResponse } from "@/types/api";
 import type {
   Departments,
   EmployeePosition,
@@ -7,7 +8,10 @@ import type {
   Weekday,
 } from "@/types/common";
 
-import type { ApiResponse } from "@/types/api";
+// Scheduling models — dates and times are serialized strings.
+
+export type PeriodStatus = "DRAFT" | "VALIDATED" | "PUBLISHED";
+
 export interface TemplateRule {
   id: UUID;
   department: Departments;
@@ -17,6 +21,14 @@ export interface TemplateRule {
   endTimeLocal: LocalTimeString;
   slots: number;
   active: boolean;
+}
+
+export interface SchedulePeriod {
+  id: UUID;
+  department: Departments;
+  startDate: ISODateString;
+  endDate: ISODateString;
+  status: PeriodStatus;
 }
 
 export interface ShiftSlot {
@@ -30,6 +42,8 @@ export interface ShiftSlot {
   endTime: ISODateString;
 }
 
+// Database and server-side views — dates remain Date objects.
+
 export type DbShiftSlot = {
   id: string;
   periodId: string;
@@ -41,16 +55,6 @@ export type DbShiftSlot = {
   endTime: Date;
 };
 
-export type PeriodStatus = "DRAFT" | "VALIDATED" | "PUBLISHED";
-
-export interface SchedulePeriod {
-  id: UUID;
-  department: Departments;
-  startDate: ISODateString;
-  endDate: ISODateString;
-  status: PeriodStatus;
-}
-
 export type SchedulePeriodOverview = {
   id: UUID;
   department: Departments;
@@ -58,6 +62,8 @@ export type SchedulePeriodOverview = {
   endDate: Date;
   status: PeriodStatus;
 };
+
+// Admin overview data.
 
 export type AdminScheduleWeek = {
   startDate: Date;
@@ -67,6 +73,47 @@ export type AdminScheduleWeek = {
 export type AdminSchedulesData = {
   weeks: AdminScheduleWeek[];
   periods: SchedulePeriodOverview[];
+};
+
+// Employee overview data.
+
+export type EmployeeScheduleOverview = {
+  period: SchedulePeriod;
+  shiftSlots: ShiftSlot[];
+};
+
+export type EmployeeSchedulesData = {
+  currentSchedules: EmployeeScheduleOverview[];
+  pastSchedules: EmployeeScheduleOverview[];
+};
+
+// Inputs consumed by schedule validation.
+
+export type ValidatablePeriod = {
+  id: string;
+  department: Departments;
+  startDate: Date;
+  endDate: Date;
+  published: boolean;
+};
+
+export type ValidatableShiftSlot = {
+  id: string;
+  periodId: string;
+  employeeId: string | null;
+  department: Departments;
+  position: EmployeePosition;
+  startTime: Date;
+  endTime: Date;
+};
+
+// Validation results and individual failures.
+
+export type ScheduleValidationResult = {
+  noOverlaps: boolean;
+  sufficientRest: boolean;
+  weeklyHoursValid: boolean;
+  rollingSevenDayHoursValid: boolean;
 };
 
 export type scheduleValidationErrorCode =
@@ -82,12 +129,46 @@ export type scheduleValidationError = {
 
 export type schedulePublishError = string;
 
-export type ScheduleValidationResult = {
-  noOverlaps: boolean;
-  sufficientRest: boolean;
-  weeklyHoursValid: boolean;
-  rollingSevenDayHoursValid: boolean;
+export type AssignmentValidationError = {
+  code:
+    | "SHIFT_OVERLAP"
+    | "INSUFFICIENT_REST"
+    | "WEEKLY_HOURS_EXCEEDED"
+    | "NO_SLOT_SELECTED";
+  message: string;
 };
+
+// Schedule creation — shared API response contract.
+
+export type CreateScheduleInput = {
+  department: Departments;
+  weekStartDate: string;
+};
+
+export type CreateScheduleErrorCode = "SCHEDULE_ALREADY_EXISTS";
+
+export type CreateScheduleErrorDetails = {
+  scheduleId: UUID;
+};
+
+export type CreateScheduleResponse = ApiResponse<
+  {
+    schedule: {
+      id: UUID;
+    };
+  },
+  CreateScheduleErrorCode,
+  CreateScheduleErrorDetails
+>;
+
+// Clear assignments — shared API response contract.
+
+export type ClearScheduleApiResponse = ApiResponse<
+  { clearedCount: number },
+  "SCHEDULE_NOT_FOUND" | "SCHEDULE_NOT_DRAFT"
+>;
+
+// Existing action contracts — migrate alongside their routes and consumers.
 
 export type ScheduleAction = "VALIDATE" | "PUBLISH";
 
@@ -110,60 +191,12 @@ export type ScheduleActionResponse =
       error: string;
     };
 
-export type AssignmentValidationError = {
-  code:
-    | "SHIFT_OVERLAP"
-    | "INSUFFICIENT_REST"
-    | "WEEKLY_HOURS_EXCEEDED"
-    | "NO_SLOT_SELECTED";
-  message: string;
-};
-
-export type ValidatablePeriod = {
-  id: string;
-  department: Departments;
-  startDate: Date;
-  endDate: Date;
-  published: boolean;
-};
-
-export type ValidatableShiftSlot = {
-  id: string;
-  periodId: string;
-  employeeId: string | null;
-  department: Departments;
-  position: EmployeePosition;
-  startTime: Date;
-  endTime: Date;
-};
-
-export type EmployeeScheduleOverview = {
-  period: SchedulePeriod;
-  shiftSlots: ShiftSlot[];
-};
-
-export type EmployeeSchedulesData = {
-  currentSchedules: EmployeeScheduleOverview[];
-  pastSchedules: EmployeeScheduleOverview[];
-};
-
-export type CreateScheduleInput = {
-  department: Departments;
-  weekStartDate: string;
-};
-
-export type CreateScheduleErrorCode = "SCHEDULE_ALREADY_EXISTS";
-
-export type CreateScheduleErrorDetails = {
-  scheduleId: UUID;
-};
-
-export type CreateScheduleResponse = ApiResponse<
+export type ReopenScheduleResponse = ApiResponse<
   {
     schedule: {
       id: UUID;
+      status: "DRAFT";
     };
   },
-  CreateScheduleErrorCode,
-  CreateScheduleErrorDetails
+  "SCHEDULE_NOT_FOUND" | "SCHEDULE_ALREADY_DRAFT"
 >;

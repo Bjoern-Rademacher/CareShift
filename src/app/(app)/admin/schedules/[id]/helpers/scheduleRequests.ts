@@ -3,9 +3,10 @@ import type { AutofillResult, AutofillStrategy } from "@/types/autofill";
 import type { UUID } from "@/types/common";
 import type {
   AssignmentValidationError,
+  ClearScheduleApiResponse,
+  ReopenScheduleResponse,
   ScheduleAction,
   ScheduleActionResponse,
-  ReopenScheduleResponse,
 } from "@/types/scheduling";
 
 export type AssignEmployeeResponse =
@@ -142,9 +143,21 @@ export async function returnScheduleToDraftRequest(
 
   const result = (await response.json()) as ReopenScheduleResponse;
 
-  if (!response.ok || !result.ok) {
-    throw new Error(
-      result.ok ? "Could not return schedule to draft." : result.error,
-    );
+  if (!result.ok) {
+    throw new Error(result.error.message);
   }
+
+  if (!response.ok) {
+    throw new Error("Could not return schedule to draft.");
+  }
+}
+
+export async function clearScheduleAssignmentsRequest(
+  periodId: UUID,
+): Promise<ClearScheduleApiResponse> {
+  const response = await fetch(`/api/periods/${periodId}/clear-assignments`, {
+    method: "POST",
+  });
+
+  return (await response.json()) as ClearScheduleApiResponse;
 }

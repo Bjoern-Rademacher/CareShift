@@ -1,36 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, useState } from "react";
+
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import * as ui from "@/ui/classes";
 
-import { type Departments, DEPARTMENTS, type UUID } from "@/types/common";
-import type { ScheduleErrorCode } from "@/domain/errors/scheduleErrors";
-
-import { scheduleErrorMessages } from "@/domain/errors/scheduleErrors";
 import { createSchedule } from "@/lib/api/createSchedule";
+import { parseDateOnly } from "@/lib/functions/dateTimeUtils";
+import { isDepartment } from "@/lib/validation/common";
 
-type CreateScheduleResponse =
-  | {
-      ok: true;
-      schedule: {
-        id: string;
-      };
-    }
-  | {
-      ok: false;
-      code: ScheduleErrorCode;
-      scheduleId: UUID;
-    };
+import { DEPARTMENTS } from "@/types/common";
 
-function isDepartment(value: string | null): value is Departments {
-  return value !== null && DEPARTMENTS.includes(value as Departments);
-}
+import type { FormEvent } from "react";
+import type { Departments, UUID } from "@/types/common";
 
 function isDateInputValue(value: string | null): value is string {
-  return value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  return value !== null && parseDateOnly(value) !== null;
 }
 
 export default function CreateSchedulePage() {
@@ -52,9 +39,9 @@ export default function CreateSchedulePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [targetScheduleId, setTargetScheduleId] = useState<string | null>(null);
+  const [targetScheduleId, setTargetScheduleId] = useState<UUID | null>(null);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (isSubmitting) {
@@ -66,26 +53,22 @@ export default function CreateSchedulePage() {
     setTargetScheduleId(null);
 
     try {
-      const data = await createSchedule({
+      const result = await createSchedule({
         department,
         weekStartDate,
       });
 
-      if (!data.ok) {
-        const errorMessage = data.code
-          ? (scheduleErrorMessages[data.code] ?? data.error)
-          : data.error;
+      if (!result.ok) {
+        setMessage(result.error.message);
 
-        setMessage(errorMessage);
-
-        if (data.scheduleId) {
-          setTargetScheduleId(data.scheduleId);
+        if (result.error.code === "SCHEDULE_ALREADY_EXISTS") {
+          setTargetScheduleId(result.error.details?.scheduleId ?? null);
         }
 
         return;
       }
 
-      router.push(`/admin/schedules/${data.schedule.id}`);
+      router.push(`/admin/schedules/${result.data.schedule.id}`);
     } catch {
       setMessage("The schedule could not be created. Please try again.");
     } finally {
@@ -109,9 +92,13 @@ export default function CreateSchedulePage() {
             <select
               className={ui.input}
               value={department}
-              onChange={(event) =>
-                setDepartment(event.target.value as Departments)
-              }
+              onChange={(event) => {
+                const value = event.target.value;
+
+                if (isDepartment(value)) {
+                  setDepartment(value);
+                }
+              }}
             >
               {DEPARTMENTS.map((department) => (
                 <option key={department} value={department}>
@@ -144,7 +131,11 @@ export default function CreateSchedulePage() {
           </button>
         </form>
 
-        {message && <p className={`${ui.errorAlert} mt-6`}>{message}</p>}
+        {message && (
+          <p role="alert" className={`${ui.errorAlert} mt-6`}>
+            {message}
+          </p>
+        )}
 
         {targetScheduleId && (
           <Link

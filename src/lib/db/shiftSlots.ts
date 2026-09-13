@@ -300,3 +300,18 @@ export async function getShiftSlotsByEmployee(
     ],
   });
 }
+
+export async function clearScheduleAssignments(
+  periodId: UUID,
+  tx: Prisma.TransactionClient,
+): Promise<Prisma.BatchPayload> {
+  return tx.shiftSlot.updateMany({
+    where: {
+      periodId,
+      employeeId: { not: null },
+    },
+    data: {
+      employeeId: null,
+    },
+  });
+}

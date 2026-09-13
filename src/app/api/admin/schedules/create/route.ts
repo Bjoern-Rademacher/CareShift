@@ -1,86 +1,101 @@
+import { parseJsonBody } from "@/app/api/_shared/requests";
+
 import { requireAdmin } from "@/lib/auth/authorization";
-
+import { parseDateOnly } from "@/lib/functions/dateTimeUtils";
 import { generateScheduleFromTemplate } from "@/lib/useCases/createScheduleFromTemplate";
+import { isDepartment, isRecord } from "@/lib/validation/common";
 
-import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
+import type { Departments } from "@/types/common";
+import type { CreateScheduleResponse } from "@/types/scheduling";
 
-import { DEPARTMENTS, Departments } from "@/types/common";
+type ParsedCreateScheduleRequest = {
+  department: Departments;
+  weekStartDate: Date;
+};
 
-import type { CreateScheduleInput } from "@/types/scheduling";
-
-function isDepartment(value: unknown): value is Departments {
-  return (
-    typeof value === "string" && DEPARTMENTS.includes(value as Departments)
-  );
-}
-
-function isCreateScheduleRequest(value: unknown): value is CreateScheduleInput {
-  if (!value || typeof value !== "object") {
-    return false;
+function parseCreateScheduleRequest(
+  value: unknown,
+): ParsedCreateScheduleRequest | null {
+  if (!isRecord(value)) {
+    return null;
   }
 
-  const body = value as Record<string, unknown>;
+  const weekStartDate = parseDateOnly(value.weekStartDate);
 
-  return (
-    isDepartment(body.department) && typeof body.weekStartDate === "string"
-  );
+  if (!isDepartment(value.department) || !weekStartDate) {
+    return null;
+  }
+
+  return {
+    department: value.department,
+    weekStartDate,
+  };
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<Response> {
   const auth = await requireAdmin();
 
   if (!auth.ok) {
     return auth.response;
   }
 
+  const json = await parseJsonBody(request);
+
+  if (!json.ok) {
+    return json.response;
+  }
+
+  const input = parseCreateScheduleRequest(json.data);
+
+  if (!input) {
+    const response = {
+      ok: false,
+      error: {
+        code: "INVALID_INPUT",
+        message: "Department and a valid week start date are required.",
+      },
+    } satisfies CreateScheduleResponse;
+
+    return Response.json(response, { status: 400 });
+  }
+
   try {
-    const body: unknown = await request.json();
-
-    if (!isCreateScheduleRequest(body)) {
-      return Response.json(
-        {
-          ok: false,
-          error: "Department and week start date are required.",
-        },
-        { status: 400 },
-      );
-    }
-
-    const result = await generateScheduleFromTemplate({
-      department: body.department,
-      weekStartDate: new Date(`${body.weekStartDate}T00:00:00Z`),
-    });
+    const result = await generateScheduleFromTemplate(input);
 
     if (!result.ok) {
-      return Response.json(result, { status: 409 });
+      const response = {
+        ok: false,
+        error: {
+          code: result.error.code,
+          message: result.error.message,
+          details: result.error.details,
+        },
+      } satisfies CreateScheduleResponse;
+
+      return Response.json(response, { status: 409 });
     }
 
-    return Response.json(result, { status: 201 });
+    const response = {
+      ok: true,
+      data: {
+        schedule: {
+          id: result.data.schedule.id,
+        },
+      },
+    } satisfies CreateScheduleResponse;
+
+    return Response.json(response, { status: 201 });
   } catch (error) {
     console.error("Failed to create schedule", error);
 
-    return Response.json(
-      {
-        ok: false,
-        error: "Failed to create schedule.",
+    const response = {
+      ok: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to create schedule.",
       },
-      { status: 500 },
-    );
+    } satisfies CreateScheduleResponse;
+
+    return Response.json(response, { status: 500 });
   }
-}
-
-export function GET() {
-  return METHOD_NOT_ALLOWED();
-}
-
-export function PUT() {
-  return METHOD_NOT_ALLOWED();
-}
-
-export function PATCH() {
-  return METHOD_NOT_ALLOWED();
-}
-
-export function DELETE() {
-  return METHOD_NOT_ALLOWED();
 }

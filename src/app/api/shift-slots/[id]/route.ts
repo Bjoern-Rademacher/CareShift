@@ -1,6 +1,7 @@
 // src/app/api/shift-slots/[id]/route.ts
 
 import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
+import { requireAdmin } from "@/lib/auth/authorization";
 import { assignEmployeeToShiftSlot } from "@/lib/useCases/assignEmployeeToShiftSlot";
 
 import type { UUID } from "@/types/common";
@@ -24,6 +25,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.ok) {
+      return auth.response;
+    }
+
     const { id } = await params;
     const body: unknown = await request.json();
 
