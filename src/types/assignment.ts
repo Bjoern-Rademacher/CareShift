@@ -1,10 +1,9 @@
-import type { AssignableEmployee } from "@/types/employee";
+import type { ApiResponse } from "@/types/api";
+import type { Departments, UUID } from "@/types/common";
+import type { AssignableEmployee, Position } from "@/types/employee";
 import type { ShiftSlot } from "@/types/scheduling";
 
-import type { UUID } from "@/types/common";
-
-import type { Departments } from "@/types/common";
-import type { Position } from "@/types/employee";
+/* Assignment candidate evaluation */
 
 export type AssignmentUnavailableReason =
   | "AT_CAPACITY"
@@ -38,6 +37,8 @@ export type EmployeeAssignmentCandidate = {
   unavailableReason: AssignmentUnavailableReason | null;
 };
 
+/* Internal assignment data */
+
 export type AssignmentShift = {
   id: UUID;
   periodId: UUID;
@@ -45,9 +46,17 @@ export type AssignmentShift = {
 
   department: Departments;
   position: Position;
-
   slotNumber: number;
 
   startTime: Date;
   endTime: Date;
 };
+
+/* API responses */
+
+export type GetAssignmentCandidatesResponse = ApiResponse<
+  {
+    candidates: EmployeeAssignmentCandidate[];
+  },
+  "SHIFT_SLOT_NOT_FOUND"
+>;

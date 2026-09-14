@@ -1,18 +1,26 @@
-import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
 import { requireAdmin } from "@/lib/auth/authorization";
+import {
+  getAssignmentCandidates,
+  type GetAssignmentCandidatesError,
+} from "@/lib/useCases/getAssignmentCandidates";
 
-import { getAssignmentCandidates } from "@/lib/useCases/getAssignmentCandidates";
-
+import type { GetAssignmentCandidatesResponse } from "@/types/assignment";
 import type { UUID } from "@/types/common";
+
+const errorStatuses = {
+  SHIFT_SLOT_NOT_FOUND: 404,
+} satisfies Record<GetAssignmentCandidatesError["code"], number>;
+
+type Context = {
+  params: Promise<{
+    id: UUID;
+  }>;
+};
 
 export async function GET(
   _request: Request,
-  context: {
-    params: Promise<{
-      id: UUID;
-    }>;
-  },
-) {
+  { params }: Context,
+): Promise<Response> {
   const auth = await requireAdmin();
 
   if (!auth.ok) {
@@ -20,42 +28,43 @@ export async function GET(
   }
 
   try {
-    const { id } = await context.params;
+    const { id } = await params;
 
-    const candidates = await getAssignmentCandidates(id);
+    const result = await getAssignmentCandidates(id);
 
-    return Response.json(
-      {
-        ok: true,
-        candidates,
+    if (!result.ok) {
+      const response = {
+        ok: false,
+        error: {
+          code: result.error.code,
+          message: result.error.message,
+        },
+      } satisfies GetAssignmentCandidatesResponse;
+
+      return Response.json(response, {
+        status: errorStatuses[result.error.code],
+      });
+    }
+
+    const response = {
+      ok: true,
+      data: {
+        candidates: result.data.candidates,
       },
-      { status: 200 },
-    );
+    } satisfies GetAssignmentCandidatesResponse;
+
+    return Response.json(response, { status: 200 });
   } catch (error) {
     console.error("Loading assignment candidates failed:", error);
 
-    return Response.json(
-      {
-        ok: false,
-        error: "Could not load assignment candidates.",
+    const response = {
+      ok: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Could not load assignment candidates.",
       },
-      { status: 500 },
-    );
+    } satisfies GetAssignmentCandidatesResponse;
+
+    return Response.json(response, { status: 500 });
   }
-}
-
-export function POST() {
-  return METHOD_NOT_ALLOWED();
-}
-
-export function PATCH() {
-  return METHOD_NOT_ALLOWED();
-}
-
-export function PUT() {
-  return METHOD_NOT_ALLOWED();
-}
-
-export function DELETE() {
-  return METHOD_NOT_ALLOWED();
 }

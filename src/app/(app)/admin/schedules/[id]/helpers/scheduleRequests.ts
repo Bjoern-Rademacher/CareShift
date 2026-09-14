@@ -1,4 +1,4 @@
-import type { EmployeeAssignmentCandidate } from "@/types/assignment";
+import type { GetAssignmentCandidatesResponse } from "@/types/assignment";
 import type { AutofillResult, AutofillStrategy } from "@/types/autofill";
 import type { UUID } from "@/types/common";
 import type {
@@ -83,7 +83,7 @@ export async function scheduleActionRequest(
 export async function getAssignmentCandidatesRequest(
   slotId: UUID,
   signal?: AbortSignal,
-): Promise<EmployeeAssignmentCandidate[]> {
+): Promise<GetAssignmentCandidatesResponse> {
   const response = await fetch(
     `/api/shift-slots/${slotId}/assignment-candidates`,
     {
@@ -93,16 +93,7 @@ export async function getAssignmentCandidatesRequest(
     },
   );
 
-  const data = (await response.json()) as {
-    candidates?: EmployeeAssignmentCandidate[];
-    error?: string;
-  };
-
-  if (!response.ok) {
-    throw new Error(data.error ?? "Could not load assignment candidates.");
-  }
-
-  return data.candidates ?? [];
+  return (await response.json()) as GetAssignmentCandidatesResponse;
 }
 
 export async function autofillScheduleRequest(

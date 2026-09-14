@@ -1,33 +1,50 @@
 import { prisma } from "@/lib/db/prisma";
 
 import { getAssignableEmployeesByDepartmentAndPosition } from "@/lib/db/employees";
+import { getSchedulePeriodById } from "@/lib/db/schedulePeriods";
 import {
   getEmployeeAssignmentsInRange,
   getShiftSlotsByPeriodId,
 } from "@/lib/db/shiftSlots";
-import { getSchedulePeriodById } from "@/lib/db/schedulePeriods";
 
 import { createAutofillAssignments } from "@/lib/functions/autofill/createAutofillAssignments";
 import { getAutofillTargetSlots } from "@/lib/functions/autofill/getAutofillTargetSlots";
 
 import type { AutofillResult, AutofillScheduleInput } from "@/types/autofill";
 import type { AssignableEmployee } from "@/types/employee";
+import type { UseCaseResult } from "@/types/useCases";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const ROLLING_WINDOW_MS = 7 * DAY_IN_MS;
 
+export type AutofillScheduleError = {
+  code: "SCHEDULE_NOT_FOUND";
+  message: string;
+};
+
+export type AutofillScheduleResult = UseCaseResult<
+  AutofillResult,
+  AutofillScheduleError
+>;
+
 export async function autofillSchedule(
   input: AutofillScheduleInput,
-): Promise<AutofillResult> {
+): Promise<AutofillScheduleResult> {
   const { periodId, scope, strategy } = input;
 
   const period = await getSchedulePeriodById(periodId);
 
   if (!period) {
-    throw new Error("Schedule period not found.");
+    return {
+      ok: false,
+      error: {
+        code: "SCHEDULE_NOT_FOUND",
+        message: "Schedule not found.",
+      },
+    };
   }
 
-  // Load all slots for the period, then reduce them to the requested autofill scope.
+  // Load the period slots and reduce them to the requested scope.
   const periodSlots = await getShiftSlotsByPeriodId(periodId);
 
   const targetSlots = getAutofillTargetSlots({
@@ -35,16 +52,18 @@ export async function autofillSchedule(
     scope,
   });
 
-  // Nothing to fill.
   if (targetSlots.length === 0) {
     return {
-      assignedCount: 0,
-      unfilledSlotIds: [],
-      assignments: [],
+      ok: true,
+      data: {
+        assignedCount: 0,
+        unfilledSlotIds: [],
+        assignments: [],
+      },
     };
   }
 
-  // Load eligible employees once per required position instead of once per slot.
+  // Load eligible employees once for each required position.
   const positions = [...new Set(targetSlots.map((slot) => slot.position))];
 
   const employeeGroups = await Promise.all(
@@ -58,21 +77,21 @@ export async function autofillSchedule(
 
   const employees: AssignableEmployee[] = employeeGroups.flat();
 
-  // No eligible employees means every target slot stays open.
   if (employees.length === 0) {
     return {
-      assignedCount: 0,
-      unfilledSlotIds: targetSlots.map((slot) => slot.id),
-      assignments: [],
+      ok: true,
+      data: {
+        assignedCount: 0,
+        unfilledSlotIds: targetSlots.map((slot) => slot.id),
+        assignments: [],
+      },
     };
   }
 
   const employeeIds = employees.map((employee) => employee.id);
 
-  // Load surrounding assignments as context for overlap, rest,
-  // weekly-hour and rolling 7-day checks.
+  // Include surrounding assignments for workload, overlap and rest checks.
   const rangeStart = new Date(period.startDate.getTime() - ROLLING_WINDOW_MS);
-
   const rangeEnd = new Date(period.endDate.getTime() + ROLLING_WINDOW_MS);
 
   const assignmentSlots = await getEmployeeAssignmentsInRange({
@@ -81,7 +100,7 @@ export async function autofillSchedule(
     rangeEnd,
   });
 
-  // Build the autofill plan in memory before writing anything to the database.
+  // Build the complete plan before writing anything.
   const result = createAutofillAssignments({
     targetSlots,
     assignmentSlots,
@@ -91,14 +110,14 @@ export async function autofillSchedule(
     strategy,
   });
 
-  // No valid assignments could be generated.
-  // Since nothing changes, the period status stays untouched.
   if (result.assignments.length === 0) {
-    return result;
+    return {
+      ok: true,
+      data: result,
+    };
   }
 
-  // Persist the complete generated plan atomically.
-  // Any previous validation or publication becomes stale once assignments change.
+  // Persist the generated plan atomically.
   await prisma.$transaction(async (tx) => {
     for (const assignment of result.assignments) {
       await tx.shiftSlot.update({
@@ -111,6 +130,7 @@ export async function autofillSchedule(
       });
     }
 
+    // Assignment changes invalidate validation and publication.
     if (period.status === "VALIDATED" || period.status === "PUBLISHED") {
       await tx.schedulePeriod.update({
         where: {
@@ -123,5 +143,8 @@ export async function autofillSchedule(
     }
   });
 
-  return result;
+  return {
+    ok: true,
+    data: result,
+  };
 }

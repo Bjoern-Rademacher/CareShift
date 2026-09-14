@@ -1,6 +1,7 @@
 // types/autofill.ts
 
 import type { UUID } from "@/types/common";
+import type { ApiResponse } from "@/types/api";
 
 export type AutofillScope =
   | {
@@ -38,6 +39,13 @@ export type AutofillScheduleInput = {
   scope: AutofillScope;
   strategy: AutofillStrategy;
 };
+
+export type AutofillScheduleResponse = ApiResponse<
+  {
+    result: AutofillResult;
+  },
+  "SCHEDULE_NOT_FOUND"
+>;
 
 export type AutofillAssignment = {
   slotId: UUID;

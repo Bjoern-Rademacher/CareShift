@@ -260,15 +260,22 @@ export default function SlotsClient({
     clearAssignmentMessages();
 
     try {
-      const candidates = await getAssignmentCandidatesRequest(
+      const result = await getAssignmentCandidatesRequest(
         slotId,
         controller.signal,
       );
 
-      // Ignore stale responses.
-      if (candidateRequestRef.current === controller) {
-        setAssignmentCandidates(candidates);
+      // Ignore responses belonging to an outdated request.
+      if (candidateRequestRef.current !== controller) {
+        return;
       }
+
+      if (!result.ok) {
+        setCandidateLoadError(result.error.message);
+        return;
+      }
+
+      setAssignmentCandidates(result.data.candidates);
     } catch (error) {
       if (!isAbortError(error) && candidateRequestRef.current === controller) {
         setCandidateLoadError(

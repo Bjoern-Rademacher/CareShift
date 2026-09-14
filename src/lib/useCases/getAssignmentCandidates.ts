@@ -10,6 +10,7 @@ import { getMonday, getWeekdayDate } from "@/lib/functions/dateTimeUtils";
 
 import type { EmployeeAssignmentCandidate } from "@/types/assignment";
 import type { UUID } from "@/types/common";
+import type { UseCaseResult } from "@/types/useCases";
 
 const MINIMUM_REST_HOURS = 11;
 
@@ -17,13 +18,29 @@ const HOUR_IN_MS = 60 * 60 * 1000;
 const DAY_IN_MS = 24 * HOUR_IN_MS;
 const ROLLING_WINDOW_MS = 7 * DAY_IN_MS;
 
+export type GetAssignmentCandidatesError = {
+  code: "SHIFT_SLOT_NOT_FOUND";
+  message: string;
+};
+
+export type GetAssignmentCandidatesResult = UseCaseResult<
+  { candidates: EmployeeAssignmentCandidate[] },
+  GetAssignmentCandidatesError
+>;
+
 export async function getAssignmentCandidates(
   slotId: UUID,
-): Promise<EmployeeAssignmentCandidate[]> {
+): Promise<GetAssignmentCandidatesResult> {
   const selectedSlot = await getShiftSlotById(slotId);
 
   if (!selectedSlot) {
-    throw new Error("Shift slot not found.");
+    return {
+      ok: false,
+      error: {
+        code: "SHIFT_SLOT_NOT_FOUND",
+        message: "Shift slot not found.",
+      },
+    };
   }
 
   const employees = await getAssignableEmployeesByDepartmentAndPosition({
@@ -32,7 +49,10 @@ export async function getAssignmentCandidates(
   });
 
   if (employees.length === 0) {
-    return [];
+    return {
+      ok: true,
+      data: { candidates: [] },
+    };
   }
 
   const employeeIds = employees.map((employee) => employee.id);
@@ -62,11 +82,16 @@ export async function getAssignmentCandidates(
     rangeEnd,
   });
 
-  return createAssignmentCandidates({
-    selectedSlot,
-    assignmentSlots,
-    employees,
-    weekStart,
-    weekEnd,
-  });
+  return {
+    ok: true,
+    data: {
+      candidates: createAssignmentCandidates({
+        selectedSlot,
+        assignmentSlots,
+        employees,
+        weekStart,
+        weekEnd,
+      }),
+    },
+  };
 }
