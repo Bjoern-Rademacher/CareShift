@@ -31,11 +31,11 @@ import {
 import { SHIFT_GROUPS, WEEKDAYS } from "@/lib/constants/schedule";
 
 import type { EmployeeAssignmentCandidate } from "@/types/assignment";
+import type { ApiIssue } from "@/types/api";
 import type { AutofillResult } from "@/types/autofill";
 import type { UUID } from "@/types/common";
 import type { AssignableEmployee } from "@/types/employee";
 import type {
-  AssignmentValidationError,
   ScheduleAction,
   SchedulePeriod,
   ScheduleValidationResult,
@@ -123,9 +123,8 @@ export default function SlotsClient({
     null,
   );
 
-  const [assignmentValidationErrors, setAssignmentValidationErrors] = useState<
-    AssignmentValidationError[]
-  >([]);
+  const [assignmentValidationErrors, setAssignmentValidationErrors] =
+    useState<ApiIssue[]>([]);
 
   const [assignSystemError, setAssignSystemError] = useState<string | null>(
     null,
@@ -318,7 +317,11 @@ export default function SlotsClient({
       const result = await assignEmployeeRequest(selectedSlotId, employeeId);
 
       if (!result.ok) {
-        setAssignmentValidationErrors(result.errors);
+        if (result.error.issues) {
+          setAssignmentValidationErrors(result.error.issues);
+        } else {
+          setAssignSystemError(result.error.message);
+        }
 
         return;
       }

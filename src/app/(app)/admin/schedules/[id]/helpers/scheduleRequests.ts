@@ -1,30 +1,15 @@
-import type { GetAssignmentCandidatesResponse } from "@/types/assignment";
+import type {
+  AssignEmployeeResponse,
+  GetAssignmentCandidatesResponse,
+} from "@/types/assignment";
 import type { AutofillResult, AutofillStrategy } from "@/types/autofill";
 import type { UUID } from "@/types/common";
 import type {
-  AssignmentValidationError,
   ClearScheduleApiResponse,
   ReopenScheduleResponse,
   ScheduleAction,
   ScheduleActionResponse,
 } from "@/types/scheduling";
-
-export type AssignEmployeeResponse =
-  | {
-      ok: true;
-      assigned: {
-        slotId: UUID;
-        employeeId: UUID;
-      };
-    }
-  | {
-      ok: false;
-      errors: AssignmentValidationError[];
-    };
-
-type ErrorResponse = {
-  error?: string;
-};
 
 export async function assignEmployeeRequest(
   slotId: UUID,
@@ -38,21 +23,15 @@ export async function assignEmployeeRequest(
     body: JSON.stringify({ employeeId }),
   });
 
-  const data = (await response.json()) as
-    | AssignEmployeeResponse
-    | ErrorResponse;
+  const result = (await response.json()) as AssignEmployeeResponse;
 
-  if (response.status === 409) {
-    return data as AssignEmployeeResponse;
-  }
-
-  if (!response.ok) {
+  if (response.status >= 500) {
     throw new Error(
-      "error" in data && data.error ? data.error : "Assignment failed.",
+      !result.ok ? result.error.message : "Assignment failed.",
     );
   }
 
-  return data as AssignEmployeeResponse;
+  return result;
 }
 
 export async function scheduleActionRequest(

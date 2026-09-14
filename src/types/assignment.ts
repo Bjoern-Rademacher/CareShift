@@ -60,3 +60,18 @@ export type GetAssignmentCandidatesResponse = ApiResponse<
   },
   "SHIFT_SLOT_NOT_FOUND"
 >;
+
+export type AssignEmployeeErrorCode =
+  | "SHIFT_SLOT_NOT_FOUND"
+  | "EMPLOYEE_NOT_FOUND"
+  | "ASSIGNMENT_NOT_ALLOWED";
+
+export type AssignEmployeeResponse = ApiResponse<
+  {
+    assigned: {
+      slotId: UUID;
+      employeeId: UUID;
+    };
+  },
+  AssignEmployeeErrorCode
+>;

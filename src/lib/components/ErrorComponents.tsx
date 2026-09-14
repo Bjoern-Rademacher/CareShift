@@ -1,14 +1,9 @@
 import * as ui from "@/ui/classes";
 
-import type {
-  AssignmentValidationError,
-  scheduleValidationError,
-} from "@/types/scheduling";
-
-type ErrorListItem = AssignmentValidationError | scheduleValidationError;
+import type { ApiIssue } from "@/types/api";
 
 type ErrorListProps = {
-  errors: ErrorListItem[];
+  errors: ApiIssue[];
   title: string;
   onClose?: () => void;
 };

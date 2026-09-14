@@ -1,91 +1,120 @@
-// src/app/api/shift-slots/[id]/route.ts
+import { parseJsonBody } from "@/app/api/_shared/requests";
 
-import { METHOD_NOT_ALLOWED } from "@/app/api/_shared/responses";
 import { requireAdmin } from "@/lib/auth/authorization";
 import { assignEmployeeToShiftSlot } from "@/lib/useCases/assignEmployeeToShiftSlot";
+import { isRecord } from "@/lib/validation/common";
+import { isUUID } from "@/lib/validation/uuid";
 
+import type {
+  AssignEmployeeErrorCode,
+  AssignEmployeeResponse,
+} from "@/types/assignment";
 import type { UUID } from "@/types/common";
 
 type AssignShiftSlotRequest = {
   employeeId: UUID;
 };
 
-function isAssignShiftSlotRequest(
+function parseAssignShiftSlotRequest(
   value: unknown,
-): value is AssignShiftSlotRequest {
-  if (!value || typeof value !== "object") return false;
+): AssignShiftSlotRequest | null {
+  if (!isRecord(value) || !isUUID(value.employeeId)) {
+    return null;
+  }
 
-  const body = value as Record<string, unknown>;
-
-  return typeof body.employeeId === "string";
+  return { employeeId: value.employeeId };
 }
+
+const errorStatuses = {
+  SHIFT_SLOT_NOT_FOUND: 404,
+  EMPLOYEE_NOT_FOUND: 404,
+  ASSIGNMENT_NOT_ALLOWED: 409,
+} satisfies Record<AssignEmployeeErrorCode, number>;
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
-) {
+): Promise<Response> {
   try {
     const auth = await requireAdmin();
 
     if (!auth.ok) {
-      return auth.response;
+      const response = {
+        ok: false,
+        error:
+          auth.response.status === 401
+            ? {
+                code: "UNAUTHENTICATED",
+                message: "Authentication required.",
+              }
+            : {
+                code: "FORBIDDEN",
+                message: "Administrator access required.",
+              },
+      } satisfies AssignEmployeeResponse;
+
+      return Response.json(response, { status: auth.response.status });
+    }
+
+    const json = await parseJsonBody(request);
+
+    if (!json.ok) {
+      return json.response;
     }
 
     const { id } = await params;
-    const body: unknown = await request.json();
+    const input = parseAssignShiftSlotRequest(json.data);
 
-    if (!isAssignShiftSlotRequest(body)) {
-      return Response.json(
-        {
-          ok: false,
-          error: "Employee id is required.",
+    if (!isUUID(id) || !input) {
+      const response = {
+        ok: false,
+        error: {
+          code: "INVALID_INPUT",
+          message: "Valid shift slot and employee ids are required.",
         },
-        { status: 400 },
-      );
+      } satisfies AssignEmployeeResponse;
+
+      return Response.json(response, { status: 400 });
     }
 
     const result = await assignEmployeeToShiftSlot({
-      slotId: id as UUID,
-      employeeId: body.employeeId,
+      slotId: id,
+      employeeId: input.employeeId,
     });
 
-    // Expected business-rule failure.
-    if (!result.ok && "errors" in result) {
-      return Response.json(result, { status: 409 });
-    }
-
-    // The requested employee or shift slot does not exist.
     if (!result.ok) {
-      return Response.json(result, { status: 404 });
+      const response = {
+        ok: false,
+        error: {
+          code: result.error.code,
+          message: result.error.message,
+          issues: result.error.issues,
+        },
+      } satisfies AssignEmployeeResponse;
+
+      return Response.json(response, {
+        status: errorStatuses[result.error.code],
+      });
     }
 
-    return Response.json(result, { status: 200 });
+    const response = {
+      ok: true,
+      data: result.data,
+    } satisfies AssignEmployeeResponse;
+
+    return Response.json(response, { status: 200 });
   } catch (error) {
     console.error("Failed to assign employee to shift slot:", error);
 
     // Unexpected application, database, or runtime failure.
-    return Response.json(
-      {
-        ok: false,
-        error: "Failed to assign employee to shift slot.",
+    const response = {
+      ok: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Failed to assign employee to shift slot.",
       },
-      { status: 500 },
-    );
+    } satisfies AssignEmployeeResponse;
+
+    return Response.json(response, { status: 500 });
   }
-}
-
-export function GET() {
-  return METHOD_NOT_ALLOWED();
-}
-
-export function POST() {
-  return METHOD_NOT_ALLOWED();
-}
-
-export function PUT() {
-  return METHOD_NOT_ALLOWED();
-}
-
-export function DELETE() {
-  return METHOD_NOT_ALLOWED();
 }

@@ -13,8 +13,9 @@ import { getPositionLabel } from "@/lib/functions/employeePositions";
 import { getShiftGroup } from "@/lib/functions/scheduleUtils";
 
 import type { EmployeeAssignmentCandidate } from "@/types/assignment";
+import type { ApiIssue } from "@/types/api";
 import type { UUID } from "@/types/common";
-import type { AssignmentValidationError, ShiftSlot } from "@/types/scheduling";
+import type { ShiftSlot } from "@/types/scheduling";
 
 type Props = {
   selectedSlot: ShiftSlot;
@@ -24,7 +25,7 @@ type Props = {
   onConfirm: (employeeId: UUID) => void;
   onClose: () => void;
   savingEmployeeId: UUID | null;
-  validationErrors: AssignmentValidationError[];
+  validationErrors: ApiIssue[];
   closeValidationErrors: () => void;
   systemError: string | null;
   closeSystemError: () => void;

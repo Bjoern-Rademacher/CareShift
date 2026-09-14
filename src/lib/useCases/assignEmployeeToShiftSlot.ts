@@ -11,25 +11,26 @@ import { markSchedulePeriodDraft } from "@/lib/db/schedulePeriods";
 
 import { validateAssignment } from "@/lib/validation/assignmentRules";
 
+import type { AssignEmployeeErrorCode } from "@/types/assignment";
 import type { UUID } from "@/types/common";
 import type { AssignmentValidationError } from "@/types/scheduling";
+import type { UseCaseResult } from "@/types/useCases";
 
-type AssignEmployeeResponse =
-  | {
-      ok: true;
-      assigned: {
-        slotId: UUID;
-        employeeId: UUID;
-      };
-    }
-  | {
-      ok: false;
-      errors: AssignmentValidationError[];
-    }
-  | {
-      ok: false;
-      error: string;
+type AssignEmployeeError = {
+  code: AssignEmployeeErrorCode;
+  message: string;
+  issues?: AssignmentValidationError[];
+};
+
+export type AssignEmployeeToShiftSlotResult = UseCaseResult<
+  {
+    assigned: {
+      slotId: UUID;
+      employeeId: UUID;
     };
+  },
+  AssignEmployeeError
+>;
 
 type AssignEmployeeToShiftSlotInput = {
   slotId: UUID;
@@ -39,13 +40,16 @@ type AssignEmployeeToShiftSlotInput = {
 export async function assignEmployeeToShiftSlot({
   slotId,
   employeeId,
-}: AssignEmployeeToShiftSlotInput): Promise<AssignEmployeeResponse> {
+}: AssignEmployeeToShiftSlotInput): Promise<AssignEmployeeToShiftSlotResult> {
   const slot = await getShiftSlotById(slotId);
 
   if (!slot) {
     return {
       ok: false,
-      error: "Shift slot not found.",
+      error: {
+        code: "SHIFT_SLOT_NOT_FOUND",
+        message: "Shift slot not found.",
+      },
     };
   }
 
@@ -54,7 +58,10 @@ export async function assignEmployeeToShiftSlot({
   if (!employee) {
     return {
       ok: false,
-      error: "Employee not found.",
+      error: {
+        code: "EMPLOYEE_NOT_FOUND",
+        message: "Employee not found.",
+      },
     };
   }
 
@@ -63,21 +70,30 @@ export async function assignEmployeeToShiftSlot({
   if (employee.status !== "ACTIVE") {
     return {
       ok: false,
-      error: "Employee is inactive.",
+      error: {
+        code: "ASSIGNMENT_NOT_ALLOWED",
+        message: "Employee is inactive.",
+      },
     };
   }
 
   if (!employee.departments.includes(slot.department)) {
     return {
       ok: false,
-      error: "Employee cannot work in this department.",
+      error: {
+        code: "ASSIGNMENT_NOT_ALLOWED",
+        message: "Employee cannot work in this department.",
+      },
     };
   }
 
   if (employee.position !== slot.position) {
     return {
       ok: false,
-      error: "Employee has the wrong position.",
+      error: {
+        code: "ASSIGNMENT_NOT_ALLOWED",
+        message: "Employee has the wrong position.",
+      },
     };
   }
 
@@ -102,7 +118,11 @@ export async function assignEmployeeToShiftSlot({
   if (validationErrors.length > 0) {
     return {
       ok: false,
-      errors: validationErrors,
+      error: {
+        code: "ASSIGNMENT_NOT_ALLOWED",
+        message: "Assignment violates one or more scheduling rules.",
+        issues: validationErrors,
+      },
     };
   }
 
@@ -131,9 +151,11 @@ export async function assignEmployeeToShiftSlot({
 
   return {
     ok: true,
-    assigned: {
-      slotId: assigned.id as UUID,
-      employeeId: assigned.employeeId as UUID,
+    data: {
+      assigned: {
+        slotId: assigned.id as UUID,
+        employeeId: assigned.employeeId as UUID,
+      },
     },
   };
 }
