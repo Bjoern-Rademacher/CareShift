@@ -1,27 +1,46 @@
-import generateShiftSlots from "@/lib/functions/generateShiftSlots";
-import { getMonday, getWeekdayDate } from "@/lib/functions/dateTimeUtils";
+import "server-only";
+
 import {
   createSchedulePeriodFromTemplate,
   getSchedulePeriodByDepartmentAndStartDate,
 } from "@/lib/db/schedulePeriods";
 import { getTemplateRulesByDepartment } from "@/lib/db/templateRules";
+
+import generateShiftSlots from "@/lib/functions/generateShiftSlots";
+import { getMonday, getWeekdayDate } from "@/lib/functions/dateTimeUtils";
+
 import { toTemplateRules } from "@/lib/mappers/templateRules";
 
-import {
-  SCHEDULE_ERRORS,
-  scheduleErrorMessages,
-} from "@/domain/errors/scheduleErrors";
-import type {
-  GenerateScheduleFromTemplateInput,
-  GenerateScheduleFromTemplateResult,
-} from "@/types/useCases/createScheduleFromTemplate";
+import type { Departments, UUID } from "@/types/common";
+import type { UseCaseResult } from "@/types/useCases";
+
+export type GenerateScheduleFromTemplateInput = {
+  department: Departments;
+  weekStartDate: Date;
+};
+
+export type GenerateScheduleFromTemplateError = {
+  code: "SCHEDULE_ALREADY_EXISTS";
+  message: string;
+  details: {
+    scheduleId: UUID;
+  };
+};
+
+export type GenerateScheduleFromTemplateResult = UseCaseResult<
+  {
+    schedule: {
+      id: UUID;
+    };
+  },
+  GenerateScheduleFromTemplateError
+>;
 
 export async function generateScheduleFromTemplate({
   department,
   weekStartDate,
 }: GenerateScheduleFromTemplateInput): Promise<GenerateScheduleFromTemplateResult> {
   const scheduleStartDate = getMonday(weekStartDate);
-
   const scheduleEndDate = getWeekdayDate(scheduleStartDate, 7);
 
   const existingSchedule = await getSchedulePeriodByDepartmentAndStartDate(
@@ -33,9 +52,11 @@ export async function generateScheduleFromTemplate({
     return {
       ok: false,
       error: {
-        code: SCHEDULE_ERRORS.SCHEDULE_ALREADY_EXISTS,
-        message: scheduleErrorMessages.SCHEDULE_ALREADY_EXISTS,
-        details: { scheduleId: existingSchedule.id },
+        code: "SCHEDULE_ALREADY_EXISTS",
+        message: "A schedule already exists for this department and week.",
+        details: {
+          scheduleId: existingSchedule.id,
+        },
       },
     };
   }
@@ -57,6 +78,10 @@ export async function generateScheduleFromTemplate({
 
   return {
     ok: true,
-    data: { schedule: { id: schedule.id } },
+    data: {
+      schedule: {
+        id: schedule.id,
+      },
+    },
   };
 }

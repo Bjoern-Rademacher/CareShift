@@ -1,11 +1,12 @@
 import { requireAdmin } from "@/lib/auth/authorization";
+
 import {
-  clearScheduleAssignments,
-  type ClearScheduleAssignmentsError,
-} from "@/lib/useCases/clearScheduleAssignments";
+  validateSchedulePeriod,
+  type ValidateSchedulePeriodError,
+} from "@/lib/useCases/validateSchedulePeriod";
 
 import type { UUID } from "@/types/common";
-import type { ClearScheduleAssignmentsResponse } from "@/types/scheduling";
+import type { ValidateScheduleResponse } from "@/types/scheduling";
 
 type RouteContext = {
   params: Promise<{
@@ -15,8 +16,9 @@ type RouteContext = {
 
 const errorStatuses = {
   SCHEDULE_NOT_FOUND: 404,
-  SCHEDULE_NOT_DRAFT: 409,
-} satisfies Record<ClearScheduleAssignmentsError["code"], number>;
+  SCHEDULE_ALREADY_PUBLISHED: 409,
+  SCHEDULE_VALIDATION_FAILED: 409,
+} satisfies Record<ValidateSchedulePeriodError["code"], number>;
 
 export async function POST(
   _request: Request,
@@ -31,7 +33,7 @@ export async function POST(
 
     const { id } = await params;
 
-    const result = await clearScheduleAssignments(id);
+    const result = await validateSchedulePeriod(id);
 
     if (!result.ok) {
       const response = {
@@ -39,8 +41,9 @@ export async function POST(
         error: {
           code: result.error.code,
           message: result.error.message,
+          ...("issues" in result.error ? { issues: result.error.issues } : {}),
         },
-      } satisfies ClearScheduleAssignmentsResponse;
+      } satisfies ValidateScheduleResponse;
 
       return Response.json(response, {
         status: errorStatuses[result.error.code],
@@ -50,21 +53,21 @@ export async function POST(
     const response = {
       ok: true,
       data: {
-        clearedCount: result.data.clearedCount,
+        period: result.data.period,
       },
-    } satisfies ClearScheduleAssignmentsResponse;
+    } satisfies ValidateScheduleResponse;
 
     return Response.json(response, { status: 200 });
   } catch (error) {
-    console.error("Failed to clear schedule assignments:", error);
+    console.error("Failed to validate schedule:", error);
 
     const response = {
       ok: false,
       error: {
         code: "INTERNAL_ERROR",
-        message: "Failed to clear schedule assignments.",
+        message: "Failed to validate schedule.",
       },
-    } satisfies ClearScheduleAssignmentsResponse;
+    } satisfies ValidateScheduleResponse;
 
     return Response.json(response, { status: 500 });
   }

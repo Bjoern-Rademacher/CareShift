@@ -52,35 +52,35 @@ export async function POST(
   request: Request,
   { params }: Context,
 ): Promise<Response> {
-  const auth = await requireAdmin();
-
-  if (!auth.ok) {
-    return auth.response;
-  }
-
-  const json = await parseJsonBody(request);
-
-  if (!json.ok) {
-    return json.response;
-  }
-
-  const input = parseAutofillRequest(json.data);
-
-  if (!input) {
-    const response = {
-      ok: false,
-      error: {
-        code: "INVALID_INPUT",
-        message: "A valid autofill scope and strategy are required.",
-      },
-    } satisfies AutofillScheduleResponse;
-
-    return Response.json(response, { status: 400 });
-  }
-
-  const { id } = await params;
-
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.ok) {
+      return auth.response;
+    }
+
+    const json = await parseJsonBody(request);
+
+    if (!json.ok) {
+      return json.response;
+    }
+
+    const input = parseAutofillRequest(json.data);
+
+    if (!input) {
+      const response = {
+        ok: false,
+        error: {
+          code: "INVALID_INPUT",
+          message: "A valid autofill scope and strategy are required.",
+        },
+      } satisfies AutofillScheduleResponse;
+
+      return Response.json(response, { status: 400 });
+    }
+
+    const { id } = await params;
+
     const result = await autofillSchedule({
       periodId: id,
       scope: input.scope,

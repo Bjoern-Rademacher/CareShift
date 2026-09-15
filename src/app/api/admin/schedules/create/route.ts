@@ -33,33 +33,33 @@ function parseCreateScheduleRequest(
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const auth = await requireAdmin();
-
-  if (!auth.ok) {
-    return auth.response;
-  }
-
-  const json = await parseJsonBody(request);
-
-  if (!json.ok) {
-    return json.response;
-  }
-
-  const input = parseCreateScheduleRequest(json.data);
-
-  if (!input) {
-    const response = {
-      ok: false,
-      error: {
-        code: "INVALID_INPUT",
-        message: "Department and a valid week start date are required.",
-      },
-    } satisfies CreateScheduleResponse;
-
-    return Response.json(response, { status: 400 });
-  }
-
   try {
+    const auth = await requireAdmin();
+
+    if (!auth.ok) {
+      return auth.response;
+    }
+
+    const json = await parseJsonBody(request);
+
+    if (!json.ok) {
+      return json.response;
+    }
+
+    const input = parseCreateScheduleRequest(json.data);
+
+    if (!input) {
+      const response = {
+        ok: false,
+        error: {
+          code: "INVALID_INPUT",
+          message: "Department and a valid week start date are required.",
+        },
+      } satisfies CreateScheduleResponse;
+
+      return Response.json(response, { status: 400 });
+    }
+
     const result = await generateScheduleFromTemplate(input);
 
     if (!result.ok) {

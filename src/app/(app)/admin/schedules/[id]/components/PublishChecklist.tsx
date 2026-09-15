@@ -233,7 +233,7 @@ export default function PublishChecklist({
           <button
             type="button"
             className={`${ui.buttonPrimary} flex-1`}
-            disabled={!isValidated || !validationPassed || mutationRunning}
+            disabled={!isValidated || mutationRunning}
             onClick={onPublish}
           >
             {isPublishing ? "Publishing…" : "Publish"}

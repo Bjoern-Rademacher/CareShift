@@ -5,17 +5,17 @@ import { redirect } from "next/navigation";
 
 import { SESSION_COOKIE } from "./constants";
 
-import { isValidRole } from "@/types/auth";
+import { isDemoAuthSubject } from "@/types/auth";
 
 export async function login(formData: FormData) {
-  const userKey = formData.get("role");
+  const authSubject = formData.get("authSubject");
 
-  if (!isValidRole(userKey)) {
+  if (!isDemoAuthSubject(authSubject)) {
     throw new Error("Invalid login user");
   }
   const cookieStore = await cookies();
 
-  cookieStore.set(SESSION_COOKIE, userKey, {
+  cookieStore.set(SESSION_COOKIE, authSubject, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

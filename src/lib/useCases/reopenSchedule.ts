@@ -43,10 +43,12 @@ export async function reopenSchedule(
 
   if (period.status === "DRAFT") {
     return {
-      ok: false,
-      error: {
-        code: "SCHEDULE_ALREADY_DRAFT",
-        message: "Schedule is already a draft.",
+      ok: true,
+      data: {
+        schedule: {
+          id: periodId,
+          status: "DRAFT",
+        },
       },
     };
   }

@@ -25,8 +25,12 @@ import {
   clearScheduleAssignmentsRequest,
   getAssignmentCandidatesRequest,
   returnScheduleToDraftRequest,
-  scheduleActionRequest,
 } from "@/app/(app)/admin/schedules/[id]/helpers/scheduleRequests";
+
+import {
+  validateScheduleRequest,
+  publishScheduleRequest,
+} from "@/lib/api/scheduleRequests";
 
 import { SHIFT_GROUPS, WEEKDAYS } from "@/lib/constants/schedule";
 
@@ -36,7 +40,6 @@ import type { AutofillResult } from "@/types/autofill";
 import type { UUID } from "@/types/common";
 import type { AssignableEmployee } from "@/types/employee";
 import type {
-  ScheduleAction,
   SchedulePeriod,
   ScheduleValidationResult,
   schedulePublishError,
@@ -69,6 +72,17 @@ const SUCCESSFUL_VALIDATION: ScheduleValidationResult = {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
+}
+
+function isScheduleValidationError(
+  issue: ApiIssue,
+): issue is scheduleValidationError {
+  return (
+    issue.code === "MISSING_ASSIGNMENT" ||
+    issue.code === "DOUBLE_ASSIGNMENT" ||
+    issue.code === "INSUFFICIENT_REST" ||
+    issue.code === "WEEKLY_HOURS_EXCEEDED"
+  );
 }
 
 export default function SlotsClient({
@@ -123,8 +137,9 @@ export default function SlotsClient({
     null,
   );
 
-  const [assignmentValidationErrors, setAssignmentValidationErrors] =
-    useState<ApiIssue[]>([]);
+  const [assignmentValidationErrors, setAssignmentValidationErrors] = useState<
+    ApiIssue[]
+  >([]);
 
   const [assignSystemError, setAssignSystemError] = useState<string | null>(
     null,
@@ -342,43 +357,77 @@ export default function SlotsClient({
     }
   }
 
-  async function handleScheduleAction(action: ScheduleAction) {
+  async function handleValidateSchedulePeriod() {
     if (mutationRunning) {
       return;
     }
 
-    setActiveMutation(action);
+    setActiveMutation("VALIDATE");
     clearScheduleMessages();
-
-    if (action === "VALIDATE") {
-      // Clear the previous validation result.
-      setValidationResult(null);
-    }
+    setValidationResult(null);
 
     try {
-      const result = await scheduleActionRequest(schedulePeriod.id, action);
+      const result = await validateScheduleRequest(schedulePeriod.id);
 
       if (!result.ok) {
-        if ("errors" in result) {
-          setScheduleValidationErrors(result.errors);
-        } else if (action === "PUBLISH") {
-          setSchedulePublishError(result.error);
+        if (
+          result.error.code === "SCHEDULE_VALIDATION_FAILED" &&
+          result.error.issues
+        ) {
+          setScheduleValidationErrors(
+            result.error.issues.filter(isScheduleValidationError),
+          );
         } else {
-          setScheduleSystemError(result.error);
+          setScheduleSystemError(result.error.message);
         }
 
         return;
       }
 
-      if (result.action === "VALIDATE") {
-        setValidationResult(SUCCESSFUL_VALIDATION);
-      }
+      setValidationResult(SUCCESSFUL_VALIDATION);
 
-      // Reload status and server data.
       router.refresh();
     } catch (error) {
       setScheduleSystemError(
-        error instanceof Error ? error.message : "Schedule action failed.",
+        error instanceof Error ? error.message : "Schedule validation failed.",
+      );
+    } finally {
+      setActiveMutation(null);
+    }
+  }
+
+  async function handlePublishSchedulePeriod() {
+    if (mutationRunning) {
+      return;
+    }
+
+    setActiveMutation("PUBLISH");
+    clearScheduleMessages();
+
+    try {
+      const result = await publishScheduleRequest(schedulePeriod.id);
+
+      if (!result.ok) {
+        if (
+          result.error.code === "SCHEDULE_VALIDATION_FAILED" &&
+          result.error.issues
+        ) {
+          setValidationResult(null);
+
+          setScheduleValidationErrors(
+            result.error.issues.filter(isScheduleValidationError),
+          );
+        } else {
+          setScheduleSystemError(result.error.message);
+        }
+
+        return;
+      }
+
+      router.refresh();
+    } catch (error) {
+      setScheduleSystemError(
+        error instanceof Error ? error.message : "Schedule publishing failed.",
       );
     } finally {
       setActiveMutation(null);
@@ -632,8 +681,8 @@ export default function SlotsClient({
             isValidating={isValidating}
             isPublishing={isPublishing}
             mutationRunning={mutationRunning}
-            onValidate={() => handleScheduleAction("VALIDATE")}
-            onPublish={() => handleScheduleAction("PUBLISH")}
+            onValidate={() => handleValidateSchedulePeriod()}
+            onPublish={() => handlePublishSchedulePeriod()}
           />
         </aside>
       </div>

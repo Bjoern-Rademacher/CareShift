@@ -168,28 +168,21 @@ export type ClearScheduleApiResponse = ApiResponse<
   "SCHEDULE_NOT_FOUND" | "SCHEDULE_NOT_DRAFT"
 >;
 
-// Existing action contracts — migrate alongside their routes and consumers.
-
 export type ScheduleAction = "VALIDATE" | "PUBLISH";
 
-export type ScheduleActionResponse =
-  | {
-      ok: true;
-      action: "VALIDATE";
-    }
-  | {
-      ok: true;
-      action: "PUBLISH";
-      period: SchedulePeriod;
-    }
-  | {
-      ok: false;
-      errors: scheduleValidationError[];
-    }
-  | {
-      ok: false;
-      error: string;
-    };
+export type ScheduleActionErrorCode =
+  | "SCHEDULE_NOT_FOUND"
+  | "SCHEDULE_ALREADY_PUBLISHED"
+  | "SCHEDULE_NOT_VALIDATED"
+  | "SCHEDULE_VALIDATION_FAILED";
+
+export type ScheduleActionResponse = ApiResponse<
+  {
+    action: ScheduleAction;
+    period: SchedulePeriod;
+  },
+  ScheduleActionErrorCode
+>;
 
 export type ReopenScheduleResponse = ApiResponse<
   {
@@ -199,4 +192,36 @@ export type ReopenScheduleResponse = ApiResponse<
     };
   },
   "SCHEDULE_NOT_FOUND" | "SCHEDULE_ALREADY_DRAFT"
+>;
+
+// Api response types
+
+export type GetSchedulePeriodsResponse = ApiResponse<{
+  periods: SchedulePeriod[];
+}>;
+
+export type ClearScheduleAssignmentsResponse = ApiResponse<
+  {
+    clearedCount: number;
+  },
+  "SCHEDULE_NOT_FOUND" | "SCHEDULE_NOT_DRAFT"
+>;
+
+export type ValidateScheduleResponse = ApiResponse<
+  {
+    period: SchedulePeriod;
+  },
+  | "SCHEDULE_NOT_FOUND"
+  | "SCHEDULE_ALREADY_PUBLISHED"
+  | "SCHEDULE_VALIDATION_FAILED"
+>;
+
+export type PublishScheduleResponse = ApiResponse<
+  {
+    period: SchedulePeriod;
+  },
+  | "SCHEDULE_NOT_FOUND"
+  | "SCHEDULE_NOT_VALIDATED"
+  | "SCHEDULE_ALREADY_PUBLISHED"
+  | "SCHEDULE_VALIDATION_FAILED"
 >;

@@ -32,7 +32,6 @@ import type {
   AdminDashboardData,
   AdminDashboardPeriod,
 } from "@/types/dashboard";
-import type { PeriodStatus } from "@/types/scheduling";
 
 type Props = {
   data: AdminDashboardData;

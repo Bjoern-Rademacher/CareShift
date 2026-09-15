@@ -25,7 +25,7 @@ import { login } from "@/lib/auth/login";
 
 import * as ui from "@/ui/classes";
 
-import type { Role } from "@/types/auth";
+import type { DemoAuthSubject } from "@/types/auth";
 
 const workflow = [
   {
@@ -70,21 +70,21 @@ const assignmentTools = [
 
 const demoRoles = [
   {
-    role: "ADMIN" as const,
+    authSubject: "demo-admin" as const,
     icon: UserCog,
     title: "Enter as Admin",
     description: "Full access to all features",
     iconClass: "bg-selected text-selected-foreground",
   },
   {
-    role: "EMPLOYEE" as const,
+    authSubject: "demo-employee" as const,
     icon: UserRound,
     title: "View as Employee",
     description: "See your schedule",
     iconClass: "bg-success-muted text-success",
   },
   {
-    role: "DISPLAY" as const,
+    authSubject: "demo-display" as const,
     icon: Eye,
     title: "View as Display",
     description: "Read-only access",
@@ -95,17 +95,17 @@ const demoRoles = [
 export default function LandingPage() {
   const [aboutOpen, setAboutOpen] = useState(false);
 
-  const [loadingRole, setLoadingRole] = useState<Role | null>(null);
+  const [loadingRole, setLoadingRole] = useState<DemoAuthSubject | null>(null);
 
   const [error, setError] = useState<string | null>(null);
 
-  async function enterDemo(role: Role) {
+  async function enterDemo(authSubject: DemoAuthSubject) {
     setError(null);
-    setLoadingRole(role);
+    setLoadingRole(authSubject);
 
     try {
       const formData = new FormData();
-      formData.set("role", role);
+      formData.set("authSubject", authSubject);
 
       await login(formData);
     } catch {
@@ -291,9 +291,9 @@ export default function LandingPage() {
 
               return (
                 <button
-                  key={demoRole.role}
+                  key={demoRole.authSubject}
                   type="button"
-                  onClick={() => enterDemo(demoRole.role)}
+                  onClick={() => enterDemo(demoRole.authSubject)}
                   disabled={loadingRole !== null}
                   className="
                       group flex items-center
@@ -328,7 +328,7 @@ export default function LandingPage() {
 
                     <div>
                       <p className={ui.label}>
-                        {loadingRole === demoRole.role
+                        {loadingRole === demoRole.authSubject
                           ? "Opening..."
                           : demoRole.title}
                       </p>

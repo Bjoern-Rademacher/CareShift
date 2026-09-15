@@ -7,6 +7,13 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  ADMIN
+  EMPLOYEE
+  DISPLAY
+}
+
+
 enum Department {
   ER
   ICU
@@ -44,6 +51,18 @@ enum PeriodStatus {
   PUBLISHED
 }
 
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  authProvider String
+  authSubject  String
+  role         UserRole
+
+  employeeId   String?   @unique @db.Uuid
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@unique([authProvider, authSubject])
+}
+
 model Employee {
   id          String         @id @default(uuid()) @db.Uuid
   firstName   String
@@ -53,6 +72,7 @@ model Employee {
   status      EmployeeStatus @default(ACTIVE)
 
   shiftSlots ShiftSlot[]
+  user       User?
 }
 
 model SchedulePeriod {

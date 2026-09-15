@@ -2,7 +2,11 @@ import type {
   AssignEmployeeResponse,
   GetAssignmentCandidatesResponse,
 } from "@/types/assignment";
-import type { AutofillResult, AutofillStrategy } from "@/types/autofill";
+import type {
+  AutofillResult,
+  AutofillScheduleResponse,
+  AutofillStrategy,
+} from "@/types/autofill";
 import type { UUID } from "@/types/common";
 import type {
   ClearScheduleApiResponse,
@@ -10,6 +14,61 @@ import type {
   ScheduleAction,
   ScheduleActionResponse,
 } from "@/types/scheduling";
+import { isRecord } from "@/lib/validation/common";
+
+function isScheduleActionErrorCode(value: unknown): value is string {
+  return (
+    value === "INVALID_JSON" ||
+    value === "INVALID_INPUT" ||
+    value === "UNAUTHENTICATED" ||
+    value === "FORBIDDEN" ||
+    value === "NOT_FOUND" ||
+    value === "INTERNAL_ERROR" ||
+    value === "SCHEDULE_NOT_FOUND" ||
+    value === "SCHEDULE_ALREADY_PUBLISHED" ||
+    value === "SCHEDULE_NOT_VALIDATED" ||
+    value === "SCHEDULE_VALIDATION_FAILED"
+  );
+}
+
+function isScheduleActionResponse(
+  value: unknown,
+): value is ScheduleActionResponse {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (value.ok === true) {
+    return (
+      isRecord(value.data) &&
+      (value.data.action === "VALIDATE" || value.data.action === "PUBLISH") &&
+      isRecord(value.data.period) &&
+      typeof value.data.period.id === "string" &&
+      typeof value.data.period.department === "string" &&
+      typeof value.data.period.startDate === "string" &&
+      typeof value.data.period.endDate === "string" &&
+      (value.data.period.status === "DRAFT" ||
+        value.data.period.status === "VALIDATED" ||
+        value.data.period.status === "PUBLISHED")
+    );
+  }
+
+  return (
+    value.ok === false &&
+    isRecord(value.error) &&
+    isScheduleActionErrorCode(value.error.code) &&
+    typeof value.error.message === "string" &&
+    (value.error.issues === undefined ||
+      (Array.isArray(value.error.issues) &&
+        value.error.issues.every(
+          (issue) =>
+            isRecord(issue) &&
+            typeof issue.code === "string" &&
+            typeof issue.message === "string" &&
+            (issue.field === undefined || typeof issue.field === "string"),
+        )))
+  );
+}
 
 export async function assignEmployeeRequest(
   slotId: UUID,
@@ -46,14 +105,24 @@ export async function scheduleActionRequest(
     body: JSON.stringify({ action }),
   });
 
-  const data = (await response.json()) as ScheduleActionResponse;
+  const data: unknown = await response.json();
 
-  if (response.status === 409) {
-    return data;
+  if (!isScheduleActionResponse(data)) {
+    throw new Error("Invalid schedule action response.");
   }
 
-  if (!response.ok) {
-    throw new Error("error" in data ? data.error : "Schedule action failed.");
+  if (response.status >= 500) {
+    throw new Error(
+      data.ok ? "Schedule action failed." : data.error.message,
+    );
+  }
+
+  if (!response.ok || !data.ok) {
+    if (!data.ok && response.status >= 400 && response.status < 500) {
+      return data;
+    }
+
+    throw new Error("Invalid schedule action response.");
   }
 
   return data;
@@ -92,16 +161,15 @@ export async function autofillScheduleRequest(
     }),
   });
 
-  const data = (await response.json()) as {
-    result?: AutofillResult;
-    error?: string;
-  };
+  const result = (await response.json()) as AutofillScheduleResponse;
 
-  if (!response.ok || !data.result) {
-    throw new Error(data.error ?? "Could not autofill schedule.");
+  if (!response.ok || !result.ok) {
+    throw new Error(
+      result.ok ? "Could not autofill schedule." : result.error.message,
+    );
   }
 
-  return data.result;
+  return result.data.result;
 }
 
 export async function returnScheduleToDraftRequest(

@@ -3,13 +3,16 @@
 import { prisma } from "@/lib/db/prisma";
 
 import { seedEmployees } from "./seedEmployees";
+import { seedAuth } from "./seedAuth";
 import { seedTemplateRules } from "./seedTemplateRules";
 import { seedPeriods } from "./seedPeriods";
 
 async function main() {
-  await seedEmployees();
-
   await seedTemplateRules();
+
+  const employeeIds = await seedEmployees();
+
+  await seedAuth(employeeIds);
 
   await seedPeriods();
 }

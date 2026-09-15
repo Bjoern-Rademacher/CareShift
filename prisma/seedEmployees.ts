@@ -4,6 +4,23 @@ import { prisma } from "@/lib/db/prisma";
 
 import type { Prisma } from "@/generated/prisma/client";
 
+const demoEmployees = {
+  admin: {
+    firstName: "Anna",
+    lastName: "Keller",
+    position: "HEAD_DOCTOR",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+  employee: {
+    firstName: "Kevin",
+    lastName: "Frank",
+    position: "NURSE",
+    departments: ["ER"],
+    status: "ACTIVE",
+  },
+} satisfies Record<string, Prisma.EmployeeCreateInput>;
+
 const employees: Prisma.EmployeeCreateManyInput[] = [
   // ER
   {
@@ -230,6 +247,13 @@ const employees: Prisma.EmployeeCreateManyInput[] = [
   {
     firstName: "Clara",
     lastName: "Seidel",
+    position: "NURSE",
+    departments: ["ICU"],
+    status: "ACTIVE",
+  },
+  {
+    firstName: "Svenja",
+    lastName: "Köhler",
     position: "NURSE",
     departments: ["ICU"],
     status: "ACTIVE",
@@ -468,12 +492,32 @@ const employees: Prisma.EmployeeCreateManyInput[] = [
   },
 ];
 
-export async function seedEmployees() {
-  await prisma.employee.deleteMany();
+export type SeededEmployeeIds = {
+  admin: string;
+  employee: string;
+};
 
-  await prisma.employee.createMany({
-    data: employees,
+export async function seedEmployees(): Promise<SeededEmployeeIds> {
+  return prisma.$transaction(async (tx) => {
+    await tx.employee.deleteMany();
+
+    const adminEmployee = await tx.employee.create({
+      data: demoEmployees.admin,
+    });
+
+    const demoEmployee = await tx.employee.create({
+      data: demoEmployees.employee,
+    });
+
+    await tx.employee.createMany({
+      data: employees,
+    });
+
+    console.log(`Seeded ${employees.length + 2} employees.`);
+
+    return {
+      admin: adminEmployee.id,
+      employee: demoEmployee.id,
+    };
   });
-
-  console.log(`Seeded ${employees.length} employees.`);
 }

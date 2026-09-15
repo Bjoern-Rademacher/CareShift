@@ -3,6 +3,14 @@ import type { Departments } from "@/types/common";
 
 export type Role = "ADMIN" | "EMPLOYEE" | "DISPLAY";
 
+export const DEMO_AUTH_SUBJECTS = [
+  "demo-admin",
+  "demo-employee",
+  "demo-display",
+] as const;
+
+export type DemoAuthSubject = (typeof DEMO_AUTH_SUBJECTS)[number];
+
 type StaffUser = {
   firstName: string;
   lastName: string;
@@ -25,29 +33,10 @@ export type CurrentUser =
       department?: never;
     };
 
-export const DEMO_USERS: Record<Role, CurrentUser> = {
-  ADMIN: {
-    role: "ADMIN",
-    firstName: "Anna",
-    lastName: "Keller",
-    employeeId: "057778a3-ed8f-4fcf-bbcf-a6852e1bd2ba" as UUID,
-  },
-
-  EMPLOYEE: {
-    role: "EMPLOYEE",
-    firstName: "Kevin",
-    lastName: "Frank",
-    employeeId: "342d14d3-2e2b-4bf6-9cd8-f77eda989f34" as UUID,
-    department: "ER",
-  },
-
-  DISPLAY: {
-    role: "DISPLAY",
-    firstName: "Display",
-    lastName: "Operator",
-  },
-};
-
-export function isValidRole(value: unknown): value is Role {
-  return value === "ADMIN" || value === "EMPLOYEE" || value === "DISPLAY";
+export function isDemoAuthSubject(value: unknown): value is DemoAuthSubject {
+  return (
+    value === "demo-admin" ||
+    value === "demo-employee" ||
+    value === "demo-display"
+  );
 }
