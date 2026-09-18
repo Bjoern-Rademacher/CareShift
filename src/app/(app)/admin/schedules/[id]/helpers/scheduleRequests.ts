@@ -11,64 +11,7 @@ import type { UUID } from "@/types/common";
 import type {
   ClearScheduleApiResponse,
   ReopenScheduleResponse,
-  ScheduleAction,
-  ScheduleActionResponse,
 } from "@/types/scheduling";
-import { isRecord } from "@/lib/validation/common";
-
-function isScheduleActionErrorCode(value: unknown): value is string {
-  return (
-    value === "INVALID_JSON" ||
-    value === "INVALID_INPUT" ||
-    value === "UNAUTHENTICATED" ||
-    value === "FORBIDDEN" ||
-    value === "NOT_FOUND" ||
-    value === "INTERNAL_ERROR" ||
-    value === "SCHEDULE_NOT_FOUND" ||
-    value === "SCHEDULE_ALREADY_PUBLISHED" ||
-    value === "SCHEDULE_NOT_VALIDATED" ||
-    value === "SCHEDULE_VALIDATION_FAILED"
-  );
-}
-
-function isScheduleActionResponse(
-  value: unknown,
-): value is ScheduleActionResponse {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  if (value.ok === true) {
-    return (
-      isRecord(value.data) &&
-      (value.data.action === "VALIDATE" || value.data.action === "PUBLISH") &&
-      isRecord(value.data.period) &&
-      typeof value.data.period.id === "string" &&
-      typeof value.data.period.department === "string" &&
-      typeof value.data.period.startDate === "string" &&
-      typeof value.data.period.endDate === "string" &&
-      (value.data.period.status === "DRAFT" ||
-        value.data.period.status === "VALIDATED" ||
-        value.data.period.status === "PUBLISHED")
-    );
-  }
-
-  return (
-    value.ok === false &&
-    isRecord(value.error) &&
-    isScheduleActionErrorCode(value.error.code) &&
-    typeof value.error.message === "string" &&
-    (value.error.issues === undefined ||
-      (Array.isArray(value.error.issues) &&
-        value.error.issues.every(
-          (issue) =>
-            isRecord(issue) &&
-            typeof issue.code === "string" &&
-            typeof issue.message === "string" &&
-            (issue.field === undefined || typeof issue.field === "string"),
-        )))
-  );
-}
 
 export async function assignEmployeeRequest(
   slotId: UUID,
@@ -85,48 +28,46 @@ export async function assignEmployeeRequest(
   const result = (await response.json()) as AssignEmployeeResponse;
 
   if (response.status >= 500) {
-    throw new Error(
-      !result.ok ? result.error.message : "Assignment failed.",
-    );
+    throw new Error(!result.ok ? result.error.message : "Assignment failed.");
   }
 
   return result;
 }
 
-export async function scheduleActionRequest(
-  periodId: UUID,
-  action: ScheduleAction,
-): Promise<ScheduleActionResponse> {
-  const response = await fetch(`/api/periods/${periodId}/publish`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ action }),
-  });
+// export async function scheduleActionRequest(
+//   periodId: UUID,
+//   action: ScheduleAction,
+// ): Promise<ScheduleActionResponse> {
+//   const response = await fetch(`/api/periods/${periodId}/publish`, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({ action }),
+//   });
 
-  const data: unknown = await response.json();
+//   const data: unknown = await response.json();
 
-  if (!isScheduleActionResponse(data)) {
-    throw new Error("Invalid schedule action response.");
-  }
+//   if (!isScheduleActionResponse(data)) {
+//     throw new Error("Invalid schedule action response.");
+//   }
 
-  if (response.status >= 500) {
-    throw new Error(
-      data.ok ? "Schedule action failed." : data.error.message,
-    );
-  }
+//   if (response.status >= 500) {
+//     throw new Error(
+//       data.ok ? "Schedule action failed." : data.error.message,
+//     );
+//   }
 
-  if (!response.ok || !data.ok) {
-    if (!data.ok && response.status >= 400 && response.status < 500) {
-      return data;
-    }
+//   if (!response.ok || !data.ok) {
+//     if (!data.ok && response.status >= 400 && response.status < 500) {
+//       return data;
+//     }
 
-    throw new Error("Invalid schedule action response.");
-  }
+//     throw new Error("Invalid schedule action response.");
+//   }
 
-  return data;
-}
+//   return data;
+// }
 
 export async function getAssignmentCandidatesRequest(
   slotId: UUID,
@@ -174,20 +115,20 @@ export async function autofillScheduleRequest(
 
 export async function returnScheduleToDraftRequest(
   periodId: UUID,
-): Promise<void> {
+): Promise<ReopenScheduleResponse> {
   const response = await fetch(`/api/periods/${periodId}/reopen`, {
     method: "POST",
   });
 
   const result = (await response.json()) as ReopenScheduleResponse;
 
-  if (!result.ok) {
-    throw new Error(result.error.message);
+  if (response.status >= 500) {
+    throw new Error(
+      result.ok ? "Could not return schedule to draft." : result.error.message,
+    );
   }
 
-  if (!response.ok) {
-    throw new Error("Could not return schedule to draft.");
-  }
+  return result;
 }
 
 export async function clearScheduleAssignmentsRequest(

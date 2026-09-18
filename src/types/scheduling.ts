@@ -168,22 +168,6 @@ export type ClearScheduleApiResponse = ApiResponse<
   "SCHEDULE_NOT_FOUND" | "SCHEDULE_NOT_DRAFT"
 >;
 
-export type ScheduleAction = "VALIDATE" | "PUBLISH";
-
-export type ScheduleActionErrorCode =
-  | "SCHEDULE_NOT_FOUND"
-  | "SCHEDULE_ALREADY_PUBLISHED"
-  | "SCHEDULE_NOT_VALIDATED"
-  | "SCHEDULE_VALIDATION_FAILED";
-
-export type ScheduleActionResponse = ApiResponse<
-  {
-    action: ScheduleAction;
-    period: SchedulePeriod;
-  },
-  ScheduleActionErrorCode
->;
-
 export type ReopenScheduleResponse = ApiResponse<
   {
     schedule: {

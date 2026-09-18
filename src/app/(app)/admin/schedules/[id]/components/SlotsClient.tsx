@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import * as ui from "@/ui/classes";
 
@@ -12,40 +11,23 @@ import ReturnToDraftModal from "@/app/(app)/admin/schedules/[id]/components/Retu
 import ScheduleControls from "@/app/(app)/admin/schedules/[id]/components/ScheduleControls";
 import ScheduleHeader from "@/app/(app)/admin/schedules/[id]/components/ScheduleHeader";
 import ScheduleStatistics from "@/app/(app)/admin/schedules/[id]/components/ScheduleStatistics";
+
+import { useBulkAssignments } from "@/app/(app)/admin/schedules/[id]/components/hooks/useBulkAssignments";
+import { useScheduleLifecycle } from "@/app/(app)/admin/schedules/[id]/components/hooks/useScheduleLifecycle";
+import { useScheduleMutations } from "@/app/(app)/admin/schedules/[id]/components/hooks/useScheduleMutations";
+import { useSlotAssignment } from "@/app/(app)/admin/schedules/[id]/components/hooks/useSlotAssignment";
+
 import EmployeeView from "@/app/(app)/admin/schedules/[id]/components/scheduleViews/Employee";
 import Timeline from "@/app/(app)/admin/schedules/[id]/components/scheduleViews/Timeline";
 import WeekGrid from "@/app/(app)/admin/schedules/[id]/components/scheduleViews/WeekGrid";
 
-import { ErrorMessage } from "@/lib/components/ErrorComponents";
-
 import { filterSchedule } from "@/app/(app)/admin/schedules/[id]/helpers/filterSchedule";
-import {
-  assignEmployeeRequest,
-  autofillScheduleRequest,
-  clearScheduleAssignmentsRequest,
-  getAssignmentCandidatesRequest,
-  returnScheduleToDraftRequest,
-} from "@/app/(app)/admin/schedules/[id]/helpers/scheduleRequests";
 
-import {
-  validateScheduleRequest,
-  publishScheduleRequest,
-} from "@/lib/api/scheduleRequests";
-
+import { ErrorMessage } from "@/lib/components/ErrorComponents";
 import { SHIFT_GROUPS, WEEKDAYS } from "@/lib/constants/schedule";
 
-import type { EmployeeAssignmentCandidate } from "@/types/assignment";
-import type { ApiIssue } from "@/types/api";
-import type { AutofillResult } from "@/types/autofill";
-import type { UUID } from "@/types/common";
 import type { AssignableEmployee } from "@/types/employee";
-import type {
-  SchedulePeriod,
-  ScheduleValidationResult,
-  schedulePublishError,
-  scheduleValidationError,
-  ShiftSlot,
-} from "@/types/scheduling";
+import type { SchedulePeriod, ShiftSlot } from "@/types/scheduling";
 import type { ScheduleFilters, ScheduleView } from "@/types/view";
 
 type Props = {
@@ -55,120 +37,15 @@ type Props = {
   canEdit: boolean;
 };
 
-type ScheduleMutation =
-  | "ASSIGN"
-  | "AUTOFILL"
-  | "CLEAR_ASSIGNMENTS"
-  | "VALIDATE"
-  | "PUBLISH"
-  | "RETURN_TO_DRAFT";
-
-const SUCCESSFUL_VALIDATION: ScheduleValidationResult = {
-  noOverlaps: true,
-  sufficientRest: true,
-  weeklyHoursValid: true,
-  rollingSevenDayHoursValid: true,
-};
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === "AbortError";
-}
-
-function isScheduleValidationError(
-  issue: ApiIssue,
-): issue is scheduleValidationError {
-  return (
-    issue.code === "MISSING_ASSIGNMENT" ||
-    issue.code === "DOUBLE_ASSIGNMENT" ||
-    issue.code === "INSUFFICIENT_REST" ||
-    issue.code === "WEEKLY_HOURS_EXCEEDED"
-  );
-}
-
 export default function SlotsClient({
   schedulePeriod,
   shiftSlots,
   employees,
   canEdit,
 }: Props) {
-  const router = useRouter();
-
-  // Used to offset the sticky checklist.
   const controlsRef = useRef<HTMLDivElement>(null);
 
-  // Used to cancel stale candidate requests.
-  const candidateRequestRef = useRef<AbortController | null>(null);
-
   const [controlsHeight, setControlsHeight] = useState(0);
-
-  // Blocks concurrent mutations.
-  const [activeMutation, setActiveMutation] = useState<ScheduleMutation | null>(
-    null,
-  );
-
-  // Clear-assignments modal state.
-  const [isClearAssignmentsModalOpen, setIsClearAssignmentsModalOpen] =
-    useState(false);
-
-  const [clearAssignmentsError, setClearAssignmentsError] = useState<
-    string | null
-  >(null);
-
-  // Return-to-draft modal state.
-  const [isReturnToDraftModalOpen, setIsReturnToDraftModalOpen] =
-    useState(false);
-
-  const [returnToDraftError, setReturnToDraftError] = useState<string | null>(
-    null,
-  );
-
-  // Assignment modal state.
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [selectedSlotId, setSelectedSlotId] = useState<UUID | null>(null);
-  const [savingEmployeeId, setSavingEmployeeId] = useState<UUID | null>(null);
-
-  const [assignmentCandidates, setAssignmentCandidates] = useState<
-    EmployeeAssignmentCandidate[]
-  >([]);
-
-  const [isLoadingCandidates, setIsLoadingCandidates] = useState(false);
-
-  const [candidateLoadError, setCandidateLoadError] = useState<string | null>(
-    null,
-  );
-
-  const [assignmentValidationErrors, setAssignmentValidationErrors] = useState<
-    ApiIssue[]
-  >([]);
-
-  const [assignSystemError, setAssignSystemError] = useState<string | null>(
-    null,
-  );
-
-  // Schedule action feedback.
-  const [scheduleValidationErrors, setScheduleValidationErrors] = useState<
-    scheduleValidationError[]
-  >([]);
-
-  const [schedulePublishError, setSchedulePublishError] =
-    useState<schedulePublishError | null>(null);
-
-  const [scheduleSystemError, setScheduleSystemError] = useState<string | null>(
-    null,
-  );
-
-  // Non-draft schedules were already validated by the server.
-  const [validationResult, setValidationResult] =
-    useState<ScheduleValidationResult | null>(
-      schedulePeriod.status === "VALIDATED" ||
-        schedulePeriod.status === "PUBLISHED"
-        ? SUCCESSFUL_VALIDATION
-        : null,
-    );
-
-  const [autofillResult, setAutofillResult] = useState<AutofillResult | null>(
-    null,
-  );
 
   const [activeView, setActiveView] = useState<ScheduleView>("TIMELINE");
 
@@ -178,23 +55,38 @@ export default function SlotsClient({
     assignment: "ALL",
   });
 
-  // Filters affect the displayed slots only.
   const filteredShiftSlots = filterSchedule(shiftSlots, filters);
-
-  const selectedSlot = shiftSlots.find((slot) => slot.id === selectedSlotId);
 
   const assignedCount = shiftSlots.filter(
     (slot) => slot.employeeId !== null,
   ).length;
 
-  const mutationRunning = activeMutation !== null;
-  const isAutofilling = activeMutation === "AUTOFILL";
-  const isClearingAssignments = activeMutation === "CLEAR_ASSIGNMENTS";
-  const isValidating = activeMutation === "VALIDATE";
-  const isPublishing = activeMutation === "PUBLISH";
-  const isReturningToDraft = activeMutation === "RETURN_TO_DRAFT";
+  const mutations = useScheduleMutations();
 
-  // Keep the sticky offset current.
+  const lifecycle = useScheduleLifecycle({
+    schedulePeriod,
+    mutations,
+  });
+
+  const bulkAssignments = useBulkAssignments({
+    periodId: schedulePeriod.id,
+    canEdit,
+    assignedCount,
+    mutations,
+    onAssignmentsChanged: lifecycle.invalidateValidation,
+  });
+
+  const slotAssignment = useSlotAssignment({
+    shiftSlots,
+    canEdit,
+    mutations,
+    onAssignmentChanged: () => {
+      lifecycle.invalidateValidation();
+      bulkAssignments.clearAutofillResult();
+    },
+  });
+
+  // Keep the sticky checklist offset aligned with the controls.
   useEffect(() => {
     const element = controlsRef.current;
 
@@ -212,353 +104,10 @@ export default function SlotsClient({
 
     observer.observe(element);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
-
-  function clearAssignmentMessages() {
-    setAssignmentValidationErrors([]);
-    setAssignSystemError(null);
-  }
-
-  function clearScheduleMessages() {
-    setScheduleValidationErrors([]);
-    setSchedulePublishError(null);
-    setScheduleSystemError(null);
-  }
-
-  function invalidateScheduleValidation() {
-    // Assignment changes invalidate validation.
-    setValidationResult(null);
-    clearScheduleMessages();
-  }
-
-  function resetAssignModal() {
-    // Cancel candidate loading for the previous slot.
-    candidateRequestRef.current?.abort();
-    candidateRequestRef.current = null;
-
-    setIsAssignModalOpen(false);
-    setSelectedSlotId(null);
-    setSavingEmployeeId(null);
-    setAssignmentCandidates([]);
-    setIsLoadingCandidates(false);
-    setCandidateLoadError(null);
-
-    clearAssignmentMessages();
-  }
-
-  function handleCloseAssignModal() {
-    // Keep the modal open while saving.
-    if (activeMutation === "ASSIGN") {
-      return;
-    }
-
-    resetAssignModal();
-  }
-
-  async function handleOpenAssignModal(slotId: UUID) {
-    // Draft-only; mutations cannot overlap.
-    if (!canEdit || mutationRunning) {
-      return;
-    }
-
-    const controller = new AbortController();
-    candidateRequestRef.current = controller;
-
-    setSelectedSlotId(slotId);
-    setIsAssignModalOpen(true);
-    setAssignmentCandidates([]);
-    setCandidateLoadError(null);
-    setIsLoadingCandidates(true);
-
-    clearAssignmentMessages();
-
-    try {
-      const result = await getAssignmentCandidatesRequest(
-        slotId,
-        controller.signal,
-      );
-
-      // Ignore responses belonging to an outdated request.
-      if (candidateRequestRef.current !== controller) {
-        return;
-      }
-
-      if (!result.ok) {
-        setCandidateLoadError(result.error.message);
-        return;
-      }
-
-      setAssignmentCandidates(result.data.candidates);
-    } catch (error) {
-      if (!isAbortError(error) && candidateRequestRef.current === controller) {
-        setCandidateLoadError(
-          error instanceof Error
-            ? error.message
-            : "Could not load assignment candidates.",
-        );
-      }
-    } finally {
-      if (candidateRequestRef.current === controller) {
-        candidateRequestRef.current = null;
-        setIsLoadingCandidates(false);
-      }
-    }
-  }
-
-  async function handleAssignConfirm(employeeId: UUID) {
-    if (selectedSlotId === null) {
-      setAssignmentValidationErrors([
-        {
-          code: "NO_SLOT_SELECTED",
-          message: "No slot selected.",
-        },
-      ]);
-
-      return;
-    }
-
-    if (!canEdit || mutationRunning) {
-      return;
-    }
-
-    // Lock all mutation controls.
-    setActiveMutation("ASSIGN");
-    setSavingEmployeeId(employeeId);
-
-    clearAssignmentMessages();
-
-    try {
-      const result = await assignEmployeeRequest(selectedSlotId, employeeId);
-
-      if (!result.ok) {
-        if (result.error.issues) {
-          setAssignmentValidationErrors(result.error.issues);
-        } else {
-          setAssignSystemError(result.error.message);
-        }
-
-        return;
-      }
-
-      // Clear results derived from old assignments.
-      invalidateScheduleValidation();
-      setAutofillResult(null);
-
-      resetAssignModal();
-      router.refresh();
-    } catch (error) {
-      setAssignSystemError(
-        error instanceof Error ? error.message : "Unexpected assignment error.",
-      );
-    } finally {
-      setSavingEmployeeId(null);
-      setActiveMutation(null);
-    }
-  }
-
-  async function handleValidateSchedulePeriod() {
-    if (mutationRunning) {
-      return;
-    }
-
-    setActiveMutation("VALIDATE");
-    clearScheduleMessages();
-    setValidationResult(null);
-
-    try {
-      const result = await validateScheduleRequest(schedulePeriod.id);
-
-      if (!result.ok) {
-        if (
-          result.error.code === "SCHEDULE_VALIDATION_FAILED" &&
-          result.error.issues
-        ) {
-          setScheduleValidationErrors(
-            result.error.issues.filter(isScheduleValidationError),
-          );
-        } else {
-          setScheduleSystemError(result.error.message);
-        }
-
-        return;
-      }
-
-      setValidationResult(SUCCESSFUL_VALIDATION);
-
-      router.refresh();
-    } catch (error) {
-      setScheduleSystemError(
-        error instanceof Error ? error.message : "Schedule validation failed.",
-      );
-    } finally {
-      setActiveMutation(null);
-    }
-  }
-
-  async function handlePublishSchedulePeriod() {
-    if (mutationRunning) {
-      return;
-    }
-
-    setActiveMutation("PUBLISH");
-    clearScheduleMessages();
-
-    try {
-      const result = await publishScheduleRequest(schedulePeriod.id);
-
-      if (!result.ok) {
-        if (
-          result.error.code === "SCHEDULE_VALIDATION_FAILED" &&
-          result.error.issues
-        ) {
-          setValidationResult(null);
-
-          setScheduleValidationErrors(
-            result.error.issues.filter(isScheduleValidationError),
-          );
-        } else {
-          setScheduleSystemError(result.error.message);
-        }
-
-        return;
-      }
-
-      router.refresh();
-    } catch (error) {
-      setScheduleSystemError(
-        error instanceof Error ? error.message : "Schedule publishing failed.",
-      );
-    } finally {
-      setActiveMutation(null);
-    }
-  }
-
-  async function handleAutofill() {
-    if (!canEdit || mutationRunning) {
-      return;
-    }
-
-    setActiveMutation("AUTOFILL");
-    setAutofillResult(null);
-
-    // Autofill invalidates previous validation.
-    invalidateScheduleValidation();
-
-    try {
-      const result = await autofillScheduleRequest(
-        schedulePeriod.id,
-        "BALANCE_WORKLOAD",
-      );
-
-      setAutofillResult(result);
-      router.refresh();
-    } catch (error) {
-      setScheduleSystemError(
-        error instanceof Error ? error.message : "Autofill failed.",
-      );
-    } finally {
-      setActiveMutation(null);
-    }
-  }
-
-  function handleOpenClearAssignmentsModal() {
-    if (!canEdit || mutationRunning || assignedCount === 0) {
-      return;
-    }
-
-    setClearAssignmentsError(null);
-    setIsClearAssignmentsModalOpen(true);
-  }
-
-  function handleCloseClearAssignmentsModal() {
-    if (isClearingAssignments) {
-      return;
-    }
-
-    setClearAssignmentsError(null);
-    setIsClearAssignmentsModalOpen(false);
-  }
-
-  async function handleClearAssignments() {
-    if (!canEdit || mutationRunning || assignedCount === 0) {
-      return;
-    }
-
-    setActiveMutation("CLEAR_ASSIGNMENTS");
-    setClearAssignmentsError(null);
-
-    try {
-      const result = await clearScheduleAssignmentsRequest(schedulePeriod.id);
-
-      if (!result.ok) {
-        setClearAssignmentsError(result.error.message);
-
-        return;
-      }
-
-      // Assignment-dependent results are no longer valid.
-      invalidateScheduleValidation();
-      setAutofillResult(null);
-      setIsClearAssignmentsModalOpen(false);
-
-      router.refresh();
-    } catch (error) {
-      setClearAssignmentsError(
-        error instanceof Error
-          ? error.message
-          : "Could not clear schedule assignments.",
-      );
-    } finally {
-      setActiveMutation(null);
-    }
-  }
-
-  function handleOpenReturnToDraftModal() {
-    if (schedulePeriod.status === "DRAFT" || mutationRunning) {
-      return;
-    }
-
-    setReturnToDraftError(null);
-    setIsReturnToDraftModalOpen(true);
-  }
-
-  function handleCloseReturnToDraftModal() {
-    if (isReturningToDraft) {
-      return;
-    }
-
-    setReturnToDraftError(null);
-    setIsReturnToDraftModalOpen(false);
-  }
-
-  async function handleReturnToDraft() {
-    if (schedulePeriod.status === "DRAFT" || mutationRunning) {
-      return;
-    }
-
-    setActiveMutation("RETURN_TO_DRAFT");
-    setReturnToDraftError(null);
-
-    try {
-      await returnScheduleToDraftRequest(schedulePeriod.id);
-
-      setValidationResult(null);
-      setAutofillResult(null);
-      clearScheduleMessages();
-      setIsReturnToDraftModalOpen(false);
-
-      router.refresh();
-    } catch (error) {
-      setReturnToDraftError(
-        error instanceof Error
-          ? error.message
-          : "Could not return schedule to draft.",
-      );
-    } finally {
-      setActiveMutation(null);
-    }
-  }
 
   return (
     <section>
@@ -580,37 +129,44 @@ export default function SlotsClient({
               <button
                 type="button"
                 className={ui.buttonPrimary}
-                disabled={mutationRunning}
-                onClick={handleAutofill}
+                disabled={mutations.mutationRunning}
+                onClick={bulkAssignments.handleAutofill}
               >
-                {isAutofilling ? "Autofilling…" : "Autofill open slots"}
+                {bulkAssignments.isAutofilling
+                  ? "Autofilling…"
+                  : mutations.isRefreshing
+                    ? "Updating…"
+                    : "Autofill open slots"}
               </button>
 
               <button
                 type="button"
                 className={ui.button}
-                disabled={mutationRunning || assignedCount === 0}
-                onClick={handleOpenClearAssignmentsModal}
+                disabled={mutations.mutationRunning || assignedCount === 0}
+                onClick={bulkAssignments.handleOpenClearAssignmentsModal}
               >
-                {isClearingAssignments ? "Clearing…" : "Clear assignments"}
+                {bulkAssignments.isClearingAssignments
+                  ? "Clearing…"
+                  : "Clear assignments"}
               </button>
 
-              {autofillResult && (
+              {bulkAssignments.autofillResult && (
                 <p className={ui.bodyMuted}>
                   <span className="text-success">
-                    {autofillResult.assignedCount} assigned
+                    {bulkAssignments.autofillResult.assignedCount} assigned
                   </span>
 
                   <span className="mx-2 text-foreground-subtle">•</span>
 
                   <span
                     className={
-                      autofillResult.unfilledSlotIds.length > 0
+                      bulkAssignments.autofillResult.unfilledSlotIds.length > 0
                         ? "text-warning"
                         : "text-foreground-muted"
                     }
                   >
-                    {autofillResult.unfilledSlotIds.length} unfilled
+                    {bulkAssignments.autofillResult.unfilledSlotIds.length}{" "}
+                    unfilled
                   </span>
                 </p>
               )}
@@ -620,17 +176,26 @@ export default function SlotsClient({
               <button
                 type="button"
                 className={ui.buttonPrimary}
-                disabled={mutationRunning}
-                onClick={handleOpenReturnToDraftModal}
+                disabled={mutations.mutationRunning}
+                onClick={lifecycle.handleOpenReturnToDraftModal}
               >
-                {isReturningToDraft ? "Returning…" : "Return to Draft"}
+                {lifecycle.isReturningToDraft
+                  ? "Returning…"
+                  : mutations.isRefreshing
+                    ? "Updating…"
+                    : "Return to Draft"}
               </button>
             </div>
           ) : null}
 
           <ErrorMessage
-            message={scheduleSystemError}
-            onClose={clearScheduleMessages}
+            message={bulkAssignments.systemError}
+            onClose={bulkAssignments.clearSystemError}
+          />
+
+          <ErrorMessage
+            message={lifecycle.systemError}
+            onClose={lifecycle.clearSystemError}
           />
         </div>
       </div>
@@ -642,8 +207,8 @@ export default function SlotsClient({
               shiftSlots={filteredShiftSlots}
               employees={employees}
               canAssign={canEdit}
-              assignmentDisabled={mutationRunning}
-              onAssignClick={handleOpenAssignModal}
+              assignmentDisabled={mutations.mutationRunning}
+              onAssignClick={slotAssignment.handleOpenModal}
             />
           )}
 
@@ -652,8 +217,8 @@ export default function SlotsClient({
               shiftSlots={filteredShiftSlots}
               employees={employees}
               canAssign={canEdit}
-              assignmentDisabled={mutationRunning}
-              onAssignClick={handleOpenAssignModal}
+              assignmentDisabled={mutations.mutationRunning}
+              onAssignClick={slotAssignment.handleOpenModal}
             />
           )}
 
@@ -662,8 +227,8 @@ export default function SlotsClient({
               shiftSlots={filteredShiftSlots}
               employees={employees}
               canAssign={canEdit}
-              assignmentDisabled={mutationRunning}
-              onAssignClick={handleOpenAssignModal}
+              assignmentDisabled={mutations.mutationRunning}
+              onAssignClick={slotAssignment.handleOpenModal}
             />
           )}
         </div>
@@ -673,57 +238,58 @@ export default function SlotsClient({
             status={schedulePeriod.status}
             assignedCount={assignedCount}
             totalSlots={shiftSlots.length}
-            validationResult={validationResult}
-            validationErrors={scheduleValidationErrors}
-            publishError={schedulePublishError}
-            closeValidationErrors={() => setScheduleValidationErrors([])}
-            closePublishError={() => setSchedulePublishError(null)}
-            isValidating={isValidating}
-            isPublishing={isPublishing}
-            mutationRunning={mutationRunning}
-            onValidate={() => handleValidateSchedulePeriod()}
-            onPublish={() => handlePublishSchedulePeriod()}
+            validationResult={lifecycle.validationResult}
+            validationErrors={lifecycle.validationIssues}
+            publishError={lifecycle.publishError}
+            closeValidationErrors={lifecycle.clearValidationIssues}
+            closePublishError={lifecycle.clearPublishError}
+            isValidating={lifecycle.isValidating}
+            isPublishing={lifecycle.isPublishing}
+            mutationRunning={mutations.mutationRunning}
+            onValidate={lifecycle.handleValidate}
+            onPublish={lifecycle.handlePublish}
           />
         </aside>
       </div>
 
-      {isAssignModalOpen && selectedSlot && (
+      {slotAssignment.isAssignModalOpen && slotAssignment.selectedSlot && (
         <AssignModal
-          selectedSlot={selectedSlot}
-          candidates={assignmentCandidates}
-          isLoadingCandidates={isLoadingCandidates}
-          candidateLoadError={candidateLoadError}
-          onConfirm={handleAssignConfirm}
-          onClose={handleCloseAssignModal}
-          savingEmployeeId={savingEmployeeId}
-          validationErrors={assignmentValidationErrors}
-          closeValidationErrors={() => setAssignmentValidationErrors([])}
-          systemError={assignSystemError}
-          closeSystemError={() => setAssignSystemError(null)}
+          selectedSlot={slotAssignment.selectedSlot}
+          candidates={slotAssignment.candidates}
+          isLoadingCandidates={slotAssignment.isLoadingCandidates}
+          candidateLoadError={slotAssignment.candidateLoadError}
+          savingEmployeeId={slotAssignment.savingEmployeeId}
+          validationErrors={slotAssignment.assignmentIssues}
+          systemError={slotAssignment.systemError}
+          onConfirm={slotAssignment.handleConfirm}
+          onClose={slotAssignment.handleCloseModal}
+          closeValidationErrors={slotAssignment.clearAssignmentIssues}
+          closeSystemError={slotAssignment.clearSystemError}
         />
       )}
 
-      {isClearAssignmentsModalOpen && (
+      {bulkAssignments.isClearAssignmentsModalOpen && (
         <ClearAssignmentsModal
           assignedCount={assignedCount}
-          isSubmitting={isClearingAssignments}
-          error={clearAssignmentsError}
-          onConfirm={handleClearAssignments}
-          onClose={handleCloseClearAssignmentsModal}
-          onClearError={() => setClearAssignmentsError(null)}
+          isSubmitting={bulkAssignments.isClearingAssignments}
+          error={bulkAssignments.clearAssignmentsError}
+          onConfirm={bulkAssignments.handleClearAssignments}
+          onClose={bulkAssignments.handleCloseClearAssignmentsModal}
+          onClearError={bulkAssignments.clearClearAssignmentsError}
         />
       )}
 
-      {isReturnToDraftModalOpen && schedulePeriod.status !== "DRAFT" && (
-        <ReturnToDraftModal
-          status={schedulePeriod.status}
-          isSubmitting={isReturningToDraft}
-          error={returnToDraftError}
-          onConfirm={handleReturnToDraft}
-          onClose={handleCloseReturnToDraftModal}
-          onClearError={() => setReturnToDraftError(null)}
-        />
-      )}
+      {lifecycle.isReturnToDraftModalOpen &&
+        schedulePeriod.status !== "DRAFT" && (
+          <ReturnToDraftModal
+            status={schedulePeriod.status}
+            isSubmitting={lifecycle.isReturningToDraft}
+            error={lifecycle.returnToDraftError}
+            onConfirm={lifecycle.handleReturnToDraft}
+            onClose={lifecycle.handleCloseReturnToDraftModal}
+            onClearError={lifecycle.clearReturnToDraftError}
+          />
+        )}
     </section>
   );
 }
