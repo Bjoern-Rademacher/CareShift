@@ -1,18 +1,30 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
-import { SESSION_COOKIE } from "./constants";
+import { SESSION_COOKIE } from "@/lib/auth/constants";
 
 import { isDemoAuthSubject } from "@/types/auth";
 
-export async function login(formData: FormData) {
+type LoginResult =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+export async function login(formData: FormData): Promise<LoginResult> {
   const authSubject = formData.get("authSubject");
 
   if (!isDemoAuthSubject(authSubject)) {
-    throw new Error("Invalid login user");
+    return {
+      ok: false,
+      error: "Invalid demo role.",
+    };
   }
+
   const cookieStore = await cookies();
 
   cookieStore.set(SESSION_COOKIE, authSubject, {
@@ -23,5 +35,7 @@ export async function login(formData: FormData) {
     maxAge: 60 * 60 * 8,
   });
 
-  redirect("/dashboard");
+  return {
+    ok: true,
+  };
 }

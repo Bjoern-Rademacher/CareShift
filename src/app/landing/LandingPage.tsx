@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   ArrowRight,
@@ -99,15 +100,25 @@ export default function LandingPage() {
 
   const [error, setError] = useState<string | null>(null);
 
+  const router = useRouter();
+
   async function enterDemo(authSubject: DemoAuthSubject) {
     setError(null);
     setLoadingRole(authSubject);
 
     try {
       const formData = new FormData();
+
       formData.set("authSubject", authSubject);
 
-      await login(formData);
+      const result = await login(formData);
+
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      router.replace("/dashboard");
     } catch {
       setError("Could not start the demo.");
     } finally {
