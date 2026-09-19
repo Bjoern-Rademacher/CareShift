@@ -12,46 +12,43 @@ type AboutProjectAsideProps = {
   onClose: () => void;
 };
 
-const demonstratedFeatures = [
-  "Full scheduling workflow from creation to publish",
-  "Manual, bulk and automatic employee assignment",
-  "Validation of staffing rules and constraints",
-  "Role-based access for Admin, Employee and Viewer",
-  "Realistic rules for rest time, overlaps and workload",
-  "Department and position-based scheduling",
+const coveredDemoFeatures = [
+  "Complete workflow from schedule creation to re-editing",
+  "Manual employee assignment and workload-balanced autofill",
+  "Draft, validated and published schedule states",
+  "Rules for overlaps, minimum rest and rolling seven-day workload",
+  "Position and department-based assignment checks",
+  "Role-specific access for Admin, Employee and Display users",
+  "Client-side mutation locking and repeated backend validation",
 ];
 
 const demoSteps = [
   "Enter as Admin",
-  "Create or open a weekly schedule",
-  "Assign staff manually, with bulk assign or autofill",
-  "Validate the schedule",
-  "Publish it",
-  "Switch to Employee or Viewer to explore the result",
+  "Create or open a weekly department schedule",
+  "Assign employees manually or use autofill",
+  "Validate the completed assignments",
+  "Publish the schedule",
+  "Switch to Employee or Display to view the result",
+  "Return the schedule to draft and make further changes",
 ];
 
-const nextFeatures = [
-  "Production authentication and account management",
-  "Audit history for schedule changes",
-  "Employees can request shift changes",
-  "Admin notifications for requests and schedule events",
-  "Employee notifications when schedules change",
-  "Further autofill strategy improvements",
+const plannedFeatures = [
+  "Demo data reset for a clean starting point",
+  "Production-ready authentication and support for multiple employee accounts",
+  "Schedule review and change requests for employees",
+  "Notifications and messaging",
+  "More advanced autofill and optimization strategies",
 ];
 
-const outOfScope = [
-  "Payroll",
-  "Leave management",
-  "Employee preference engine",
-  "Full legal/compliance engine",
-  "Hospital system integrations",
+const futureDirection = [
+  "Configurable scheduling rules and individual exceptions",
+  "Employee availability and absence management",
 ];
 
 export default function AboutProjectAside({
   open,
   onClose,
 }: AboutProjectAsideProps) {
-  // Allow the drawer to be closed with Escape.
   useEffect(() => {
     if (!open) {
       return;
@@ -113,16 +110,23 @@ export default function AboutProjectAside({
         </header>
 
         <div className="flex-1 space-y-8 overflow-y-auto px-7 pb-8">
-          <p className={ui.bodyMuted}>
-            CareShift is a full-stack portfolio project built around hospital
-            workforce scheduling.
-          </p>
+          <div className="space-y-3">
+            <p className={ui.bodyMuted}>
+              CareShift is a scheduling tool for hospital employees.
+            </p>
+
+            <p className={ui.bodyMuted}>
+              It helps administrators create, assign, validate and publish
+              weekly schedules. Published schedules can then be viewed through
+              employee and display accounts.
+            </p>
+          </div>
 
           <section className={ui.section}>
-            <h3 className={ui.sectionTitle}>What it demonstrates</h3>
+            <h3 className={ui.sectionTitle}>What this demo covers</h3>
 
             <ul className="space-y-3">
-              {demonstratedFeatures.map((feature) => (
+              {coveredDemoFeatures.map((feature) => (
                 <li key={feature} className="flex items-start gap-3">
                   <span
                     className="
@@ -141,7 +145,7 @@ export default function AboutProjectAside({
           </section>
 
           <section className="border-t border-border pt-6">
-            <h3 className={ui.sectionTitle}>Try it out</h3>
+            <h3 className={ui.sectionTitle}>Try the workflow</h3>
 
             <ol className="mt-4 space-y-3">
               {demoSteps.map((step, index) => (
@@ -163,13 +167,20 @@ export default function AboutProjectAside({
           </section>
 
           <section className="border-t border-border pt-6">
-            <h3 className={ui.sectionTitle}>Next planned improvements</h3>
+            <h3 className={ui.sectionTitle}>Planned next steps</h3>
 
-            <ul className="mt-4 space-y-2.5">
-              {nextFeatures.map((feature) => (
+            <ul className="mt-4 space-y-3">
+              {plannedFeatures.map((feature) => (
                 <li key={feature} className="flex items-start gap-3">
-                  <span className="mt-1 text-primary" aria-hidden="true">
-                    •
+                  <span
+                    className="
+    mt-0.5 flex size-5 shrink-0 items-center justify-center
+    rounded-full bg-emerald-950 text-emerald-300
+    dark:bg-emerald-950 dark:text-emerald-300
+  "
+                    aria-hidden="true"
+                  >
+                    <ArrowUpRight className="size-3.5" />
                   </span>
 
                   <span className={ui.bodyMuted}>{feature}</span>
@@ -179,32 +190,48 @@ export default function AboutProjectAside({
           </section>
 
           <section className="border-t border-border pt-6">
-            <h3 className={ui.sectionTitle}>Deliberately out of scope</h3>
+            <h3 className={ui.sectionTitle}>Future direction</h3>
 
-            <ul className="mt-4 space-y-2.5">
-              {outOfScope.map((feature) => (
+            <ul className="mt-4 space-y-3">
+              {futureDirection.map((feature) => (
                 <li key={feature} className="flex items-start gap-3">
-                  <X
+                  <span
                     className="
-                      mt-1 h-3.5 w-3.5 shrink-0
-                      text-foreground-subtle
-                    "
+    mt-0.5 flex size-5 shrink-0 items-center justify-center
+    rounded-full bg-emerald-950 text-emerald-300
+    dark:bg-emerald-950 dark:text-emerald-300
+  "
                     aria-hidden="true"
-                  />
+                  >
+                    <span className="size-1.5 rounded-full bg-current" />
+                  </span>
 
                   <span className={ui.bodyMuted}>{feature}</span>
                 </li>
               ))}
             </ul>
           </section>
+
+          <p
+            className={`
+              border-t border-border pt-6
+              ${ui.caption}
+            `}
+          >
+            CareShift is a portfolio demonstration and has not been designed or
+            certified for use with real medical or sensitive patient data.
+          </p>
         </div>
 
-        <footer className="grid grid-cols-2 gap-3 border-t border-border p-7">
+        <footer className="border-t border-border p-7">
           <a
             href="https://github.com/Bjoern-Rademacher/CareShift"
             target="_blank"
             rel="noreferrer"
-            className={`${ui.button} flex items-center justify-center gap-2`}
+            className={`
+              ${ui.button}
+              flex w-full items-center justify-center gap-2
+            `}
           >
             <svg
               viewBox="0 0 24 24"
@@ -213,17 +240,9 @@ export default function AboutProjectAside({
             >
               <path d={siGithub.path} />
             </svg>
+            View project on GitHub
             <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
           </a>
-
-          <button
-            type="button"
-            className={`${ui.button} flex items-center justify-center gap-2`}
-            disabled
-          >
-            <FileText className="h-4 w-4" aria-hidden="true" />
-            Technical notes
-          </button>
         </footer>
       </aside>
     </div>

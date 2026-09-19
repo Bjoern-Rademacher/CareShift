@@ -49,16 +49,16 @@ const workflow = [
   {
     icon: Send,
     title: "Publish",
-    description: "with confidence",
+    description: "verified schedules",
     iconClass: "bg-warning-muted text-warning",
   },
 ];
 
-const assignmentTools = [
+const assignmentMethods = [
   {
     icon: UsersRound,
-    title: "Bulk assign",
-    description: "Assign many recurring shifts at once.",
+    title: "Manual assignment",
+    description: "Assign staff manually to a blueprint.",
   },
   {
     icon: Sparkles,
@@ -136,7 +136,7 @@ export default function LandingPage() {
               </p>
 
               <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-foreground-muted">
-                Hospital workforce scheduling
+                Scheduling for hospital teams.
               </p>
             </div>
           </div>
@@ -165,14 +165,12 @@ export default function LandingPage() {
                 text-foreground lg:text-6xl
               "
             >
-              Smarter scheduling.
-              <br />
-              Better care.
+              Scheduling simplified.
             </h1>
 
             <p className="mt-7 max-w-[620px] text-lg leading-8 text-foreground-muted">
-              CareShift helps hospitals create, staff, validate and publish
-              weekly schedules with confidence.
+              CareShift helps hospitals create, manage, and publish reliable
+              weekly staffing schedules.
             </p>
           </div>
 
@@ -235,10 +233,10 @@ export default function LandingPage() {
 
         {/* Additional assignment features */}
         <section className="mt-8">
-          <h2 className={ui.sectionTitle}>Assignment tools</h2>
+          <h2 className={ui.sectionTitle}>Assignment methods</h2>
 
           <div className="mt-3 grid gap-4 md:grid-cols-2">
-            {assignmentTools.map((tool) => {
+            {assignmentMethods.map((tool) => {
               const Icon = tool.icon;
 
               return (
@@ -283,7 +281,9 @@ export default function LandingPage() {
 
         {/* Demo access */}
         <section className="mt-9">
-          <h2 className={ui.sectionTitle}>Jump in with a demo role</h2>
+          <h2 className={ui.sectionTitle}>
+            Choose a role to start and explore CareShift.
+          </h2>
 
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {demoRoles.map((demoRole) => {
